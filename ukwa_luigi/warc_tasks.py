@@ -7,8 +7,9 @@ import luigi.contrib.hdfs
 import luigi.contrib.hadoop
 import warcio
 from warcio.recordloader import ArcWarcRecord
+import requests, urllib3, chardet, certifi, idna # Needed for HTTP actions
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('luigi-interface')
 
 #
 # This is a Python-based streaming Hadoop job for performing basic processing of warcs
@@ -43,77 +44,6 @@ class ExternalListFile(luigi.ExternalTask):
         :rtype: object (:py:class:`luigi.target.Target`)
         """
         return luigi.contrib.hdfs.HdfsTarget(self.input_file)
-
-
-class GenerateWarcStatsIndirect(luigi.contrib.hadoop.JobTask):
-    """
-    Generates the WARC stats by reading each file in turn. Data is therefore no-local.
-
-    Parameters:
-        input_file: The file (on HDFS) that contains the list of WARC files to process
-    """
-    input_file = luigi.Parameter()
-
-    def output(self):
-        out_name = "%s-stats.tsv" % os.path.splitext(self.input_file)[0]
-        return luigi.contrib.hdfs.HdfsTarget(out_name, format=luigi.contrib.hdfs.PlainDir)
-
-    def requires(self):
-        return ExternalListFile(self.input_file)
-
-    def extra_modules(self):
-        return []
-
-    def extra_files(self):
-        return ["luigi.cfg"]
-
-    def mapper(self, line):
-        """
-        Each line should be a path to a WARC file on HDFS
-
-        We open each one in turn, and scan the contents.
-
-        The pywb record parser gives access to the following properties (at least):
-
-        entry['urlkey']
-        entry['timestamp']
-        entry['url']
-        entry['mime']
-        entry['status']
-        entry['digest']
-        entry['length']
-        entry['offset']
-
-        :param line:
-        :return:
-        """
-
-        # Ignore blank lines:
-        if line == '':
-            return
-
-        warc = luigi.contrib.hdfs.HdfsTarget(line)
-        #entry_iter = DefaultRecordParser(sort=False,
-        #                                 surt_ordered=True,
-       ##                                  include_all=False,
-        #                                 verify_http=False,
-        #                                 cdx09=False,
-        #                                 cdxj=False,
-        #                                 minimal=False)(warc.open('rb'))
-
-        #for entry in entry_iter:
-        #    hostname = urlparse.urlparse(entry['url']).hostname
-        #    yield hostname, entry['status']
-
-    def reducer(self, key, values):
-        """
-
-        :param key:
-        :param values:
-        :return:
-        """
-        for value in values:
-            yield key, sum(values)
 
 
 class ExternalFilesFromList(luigi.ExternalTask):
@@ -200,8 +130,8 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
     from_local = luigi.BoolParameter(default=False)
     read_for_offset = luigi.BoolParameter(default=False)
 
-    def __init__(self):
-        super(HadoopWarcReaderJob, self).__init__()
+    def __init__(self, **kwargs):
+        super(HadoopWarcReaderJob, self).__init__(**kwargs)
 
     def requires(self):
         return ExternalFilesFromList(self.input_file, from_local=self.from_local)
@@ -210,7 +140,8 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         return ["luigi.cfg"]
 
     def extra_modules(self):
-        return [warcio]
+        # Always needs to include the root packages of everything that's imported above except luigi (because luigi handles that)
+        return [warcio,requests,urllib3,chardet,certifi,idna]
 
     def job_runner(self):
         outputs = luigi.task.flatten(self.output())

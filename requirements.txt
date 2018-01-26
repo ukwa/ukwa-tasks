@@ -1,0 +1,14 @@
+backports-abc==0.5
+certifi==2018.1.18
+chardet==3.0.4
+docutils==0.14
+idna==2.6
+lockfile==0.12.2
+luigi==2.7.2
+python-daemon==2.1.2
+requests==2.18.4
+singledispatch==3.4.0.3
+six==1.11.0
+tornado==4.5.3
+urllib3==1.22
+warcio==1.5.1

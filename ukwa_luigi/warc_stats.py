@@ -1,9 +1,10 @@
 import luigi
-from luigi.hadoop.warc.warc_tasks import HadoopWarcReaderJob
+from ukwa_luigi.warc_tasks import HadoopWarcReaderJob
 try:
     from urllib.parse import urlparse
 except ImportError:
     from urlparse import urlparse
+
 
 class GenerateWarcStats(HadoopWarcReaderJob):
     """
