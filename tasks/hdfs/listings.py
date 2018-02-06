@@ -7,7 +7,6 @@ import subprocess
 import luigi
 import luigi.contrib.hdfs
 import luigi.contrib.webhdfs
-import luigi.contrib.hadoop_jar
 from tasks.common import state_file
 
 logger = logging.getLogger(__name__)
@@ -247,33 +246,6 @@ class ListDuplicateWebArchiveFiles(luigi.Task):
         logger.info("Of %i WARC filenames, %i are stored in a single HDFS location." % (len(filenames), unduplicated))
 
 
-class GenerateWarcHashes(luigi.contrib.hadoop_jar.HadoopJarJobTask):
-    """
-    Generates the SHA-512 hashes for the WARCs directly on HDFS.
-
-    Parameters:
-        input_file: A local file that contains the list of WARC files to process
-    """
-    input_file = luigi.Parameter()
-    task_namespace = "hdfs"
-
-    def output(self):
-        out_name = "%s-sha512.tsv" % os.path.splitext(self.input_file)[0]
-        return luigi.contrib.hdfs.HdfsTarget(out_name, format=luigi.contrib.hdfs.Plain)
-
-    #def requires(self):
-    #    return tasks.report.crawl_summary.GenerateWarcList(self.input_file)
-
-    def jar(self):
-        return "../../jars/warc-hadoop-recordreaders-2.2.0-BETA-7-SNAPSHOT-job.jar"
-
-    def main(self):
-        return "uk.bl.wa.hadoop.mapreduce.hash.HdfsFileHasher"
-
-    def args(self):
-        return [self.input_file, self.output()]
-
-
 class GenerateHDFSSummaries(luigi.WrapperTask):
     task_namespace = "hdfs"
 
@@ -308,4 +280,3 @@ if __name__ == '__main__':
     #luigi.run(['ListUKWAWebArchiveFilesOnHDFS', '--local-scheduler'])
     luigi.run(['PrintSomeLines', '--local-scheduler'])
     #luigi.run(['ListEmptyFilesOnHDFS', '--local-scheduler'])
-#    luigi.run(['GenerateWarcHashes', 'daily-warcs-test.txt'])
