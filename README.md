@@ -1,4 +1,4 @@
-# ukwa-hadoop-tasks
+# ukwa-tasks
 Luigi tasks for running Hadoop jobs and managing material held on HDFS
 
 ## Getting started

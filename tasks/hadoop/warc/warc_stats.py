@@ -1,8 +1,8 @@
+from ukwa_luigi.warc_tasks import HadoopWarcReaderJob
+from six.moves.urllib.parse import urlparse
 import os
 import luigi
 luigi.interface.setup_interface_logging()
-from ukwa_luigi.warc_tasks import HadoopWarcReaderJob
-from six.moves.urllib.parse import urlparse
 
 
 class GenerateWarcStats(HadoopWarcReaderJob):
@@ -46,6 +46,15 @@ class GenerateWarcStats(HadoopWarcReaderJob):
             # Extract the hostname:
             hostname = urlparse(record_url).hostname
 
+            #if self.read_for_offset:
+            #    print(record.raw_offset, record.raw_length, record.length, record.content_stream().read())
+            #else:
+            #    print(record.length, record.content_stream().read())
+
+            hostname = urlparse(record_url).hostname
+            yield "%s\t%s" % (hostname, status_code), 1
+
+
             # Yield the hostname+status code as the key, and the count to be summed.
             yield "%s\t%s" % (hostname, status_code), 1
 
@@ -62,8 +71,8 @@ class GenerateWarcStats(HadoopWarcReaderJob):
 
 if __name__ == '__main__':
     # Just run it directly, rather than via the Luigi Scheduler:
-    job = GenerateWarcStats(input_file='./test/input-list.txt', from_local= True )
-    job.n_reduce_tasks = 20
+    job = GenerateWarcStats(input_file='../test/input-list.txt', from_local=True)
+    #job.n_reduce_tasks = 20
     job.run()
     out = job.output()
 
