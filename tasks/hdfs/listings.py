@@ -205,7 +205,7 @@ class ListUKWAWebArchiveFilesByCollection(luigi.Task):
                     if (self.subset == 'selective' and item['filename'].startswith('/data/')) \
                             or (self.subset == 'npld' and item['filename'].startswith('/heritrix/')):
                         self.total_files += 1
-                        self.total_bytes += item['filesize']
+                        self.total_bytes += int(item['filesize'])
                         writer.writerow(item)
 
 
