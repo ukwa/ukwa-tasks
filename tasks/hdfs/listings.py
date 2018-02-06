@@ -192,7 +192,7 @@ class ListUKWAWebArchiveFilesByCollection(luigi.Task):
         return ListWebArchiveFiles(self.date)
 
     def output(self):
-        state_file(self.date, 'hdfs', 'warc-ukwa-%s-files-list.csv' % self.subset)
+        return state_file(self.date, 'hdfs', 'warc-ukwa-%s-files-list.csv' % self.subset)
 
     def run(self):
         with self.output().open('w') as f:
