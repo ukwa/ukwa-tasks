@@ -185,6 +185,9 @@ class ListUKWAWebArchiveFilesByCollection(luigi.Task):
     subset = luigi.Parameter(default='npld')
     task_namespace = "hdfs"
 
+    total_files = 0
+    total_bytes = 0
+
     def requires(self):
         return ListWebArchiveFiles(self.date)
 
@@ -201,6 +204,8 @@ class ListUKWAWebArchiveFilesByCollection(luigi.Task):
                     # Archive file names:
                     if (self.subset == 'selective' and item['filename'].startswith('/data/')) \
                             or (self.subset == 'npld' and item['filename'].startswith('/heritrix/')):
+                        self.total_files += 1
+                        self.total_bytes += item['filesize']
                         writer.writerow(item)
 
 
@@ -250,7 +255,8 @@ class GenerateHDFSSummaries(luigi.WrapperTask):
     task_namespace = "hdfs"
 
     def requires(self):
-        return [ ListAllFilesPutOnHDFS(), ListUKWAWebArchiveFiles(), ListDuplicateWebArchiveFiles(), ListEmptyFiles() ]
+        return [ ListAllFilesPutOnHDFS(), ListUKWAWebArchiveFiles(), ListDuplicateWebArchiveFiles(), ListEmptyFiles(),
+                 ListUKWAWebArchiveFilesByCollection() ]
 
 
 class PrintSomeLines(luigi.Task):
