@@ -1,6 +1,6 @@
 import luigi
 from prometheus_client import CollectorRegistry, Gauge
-from tasks.hdfs.listings import ListAllFilesOnHDFSToLocalFile
+import tasks
 
 # --------------------------------------------------------------------------
 # Metrics definitions:
@@ -21,12 +21,12 @@ def record_task_outcome(registry, task, value):
     g.labels(task_namespace=task.task_namespace).set(value)
 
     # Task-specific metrics:
-    if isinstance(task, ListAllFilesOnHDFSToLocalFile):
+    if isinstance(task, tasks.hdfs.listings.ListAllFilesOnHDFSToLocalFile):
         record_hdfs_stats(registry,task)
 
 
 def record_hdfs_stats(registry, task):
-    # type: (CollectorRegistry, ListAllFilesOnHDFSToLocalFile) -> None
+    # type: (CollectorRegistry, tasks.hdfs.listings.ListAllFilesOnHDFSToLocalFile) -> None
     hdfs_service = 'hdfs-0.20'
 
     g = Gauge('hdfs_files_total_bytes',

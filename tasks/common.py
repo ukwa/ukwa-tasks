@@ -3,8 +3,8 @@ import posixpath
 import luigi.contrib.hdfs
 import luigi.contrib.webhdfs
 from tasks.hdfs.webhdfs import WebHdfsPlainFormat
-from metrics import *
 from prometheus_client import CollectorRegistry, push_to_gateway
+from metrics import record_task_outcome
 
 LOCAL_STATE_FOLDER = os.environ.get('LOCAL_STATE_FOLDER', '/var/task-state')
 HDFS_STATE_FOLDER = os.environ.get('HDFS_STATE_FOLDER','/9_processing/task-state/')
