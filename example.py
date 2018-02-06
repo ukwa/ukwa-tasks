@@ -1,9 +1,10 @@
 import os
 import luigi
-luigi.interface.setup_interface_logging()
-from ukwa_luigi.warc_tasks import HadoopWarcReaderJob
+import luigi.contrib
+from tasks.hadoop.warc.warctasks import HadoopWarcReaderJob
 from six.moves.urllib.parse import urlparse
 
+luigi.interface.setup_interface_logging()
 
 class GenerateWarcStats(HadoopWarcReaderJob):
     """
