@@ -217,6 +217,9 @@ class ListDuplicateWebArchiveFiles(luigi.Task):
     collection = luigi.Parameter(default='ukwa')
     task_namespace = "hdfs"
 
+    total_unduplicated = 0
+    total_duplicated = 0
+
     def requires(self):
         if self.collection == 'ukwa':
             return ListUKWAWebArchiveFiles(self.date)
@@ -241,14 +244,16 @@ class ListDuplicateWebArchiveFiles(luigi.Task):
                     filenames[basename].append(item['filename'])
 
         # And emit duplicates:
-        unduplicated = 0
+        self.total_duplicated = 0
+        self.total_unduplicated = 0
         with self.output().open('w') as f:
             for basename in filenames:
                 if len(filenames[basename]) > 1:
+                    self.total_duplicated += 1
                     f.write("%s\t%i\t%s\n" % (basename, len(filenames[basename]), json.dumps(filenames[basename])))
                 else:
-                    unduplicated += 1
-        logger.info("Of %i WARC filenames, %i are stored in a single HDFS location." % (len(filenames), unduplicated))
+                    self.total_unduplicated += 1
+        logger.info("Of %i WARC filenames, %i are stored in a single HDFS location." % (len(filenames), self.total_unduplicated))
 
 
 class GenerateHDFSSummaries(luigi.WrapperTask):

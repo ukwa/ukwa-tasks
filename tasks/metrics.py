@@ -21,11 +21,12 @@ def record_task_outcome(registry, task, value):
     g.labels(task_namespace=task.task_namespace).set(value)
 
     # Task-specific metrics:
+
     if isinstance(task, tasks.hdfs.listings.ListAllFilesOnHDFSToLocalFile):
         record_hdfs_stats(registry,task)
 
-        if isinstance(task, tasks.hdfs.listings.ListUKWAWebArchiveFilesByCollection):
-            record_hdfs_collection_stats(registry, task)
+    if isinstance(task, tasks.hdfs.listings.ListUKWAWebArchiveFilesByCollection):
+        record_hdfs_collection_stats(registry, task)
 
 
 def record_hdfs_collection_stats(registry, task):
