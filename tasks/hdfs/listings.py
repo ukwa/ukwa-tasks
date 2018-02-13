@@ -71,7 +71,7 @@ class ListAllFilesOnHDFSToLocalFile(luigi.Task):
                     # Skip directories:
                     if permissions[0] != 'd':
                         self.total_files += 1
-                        self.total_bytes += filesize
+                        self.total_bytes += int(filesize)
                         if number_of_replicas < 3:
                             self.total_under_replicated += 1
                         fout.write(json.dumps(info)+'\n')
