@@ -440,7 +440,7 @@ class ListByCrawl(luigi.Task):
                 launched = launch_datetime.strftime("%d %b %Y")
                 crawls[job][launch]['title'] = "NPLD %s crawl, launched %s (file count %i)" % (job, launched, crawls[job][launch]['total_files'])
                 with outfile.open('w') as f:
-                    f.write(json.dumps(crawls[job][launch], indent=2))
+                    f.write(json.dumps(crawls[job][launch], indent=2, sort_keys=True))
                 filenames.append(outfile.path)
 
         # Also emit a list of files that could not be understood:
@@ -448,9 +448,10 @@ class ListByCrawl(luigi.Task):
         with outfile.open('w') as f:
             unparsed_data = {
                 'folders': sorted(list(unparsed_dirs)),
-                'files': sorted(unparsed)
+                'files': unparsed,
+                'num_files': len(unparsed)
             }
-            f.write(json.dumps(unparsed_data, indent=2))
+            f.write(json.dumps(unparsed_data, indent=2, sort_keys=True))
 
         # Sanity check:
         if len(filenames) == 0:
