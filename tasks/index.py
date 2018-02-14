@@ -142,10 +142,11 @@ class CheckCdxIndex(HadoopWarcReaderJob):
         cdx_query_url = "%s?q=%s" % (self.cdx_server, quote_plus(q))
         capturedates = []
         try:
-            with urllib.urlopen(cdx_query_url) as f:
-                dom = xml.dom.minidom.parseString(f.read())
-                for de in dom.getElementsByTagName('capturedate'):
-                    capturedates.append(de.firstChild.nodeValue)
+            f = urllib.urlopen(cdx_query_url)
+            dom = xml.dom.minidom.parseString(f.read())
+            for de in dom.getElementsByTagName('capturedate'):
+                capturedates.append(de.firstChild.nodeValue)
+            f.close()
         except Exception, e:
             print(e)
 
@@ -157,6 +158,8 @@ class CheckCdxIndex(HadoopWarcReaderJob):
 
         if failures > 0:
             yield url, failures
+
+        raise Exception("DIE")
 
 
 class CdxIndexAndVerify(luigi.Task):
