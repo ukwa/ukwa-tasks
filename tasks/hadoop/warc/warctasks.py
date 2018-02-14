@@ -196,8 +196,12 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         stream = TellingReader(input_stream)
         # Parse the start of the input stream, which is <filename>\t<filedata>
         c = ''
+        name = []
         while c != '\t':
             c = stream.read(1)
+            name.append(c)
+        name = ''.join(name)
+        logger.info("Got file name %s" % name)
         # Having consumed the 'key', read the payload:
         reader = warcio.ArchiveIterator(stream)
         for record in reader:
