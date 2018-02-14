@@ -110,7 +110,7 @@ class CheckCdxIndex(HadoopWarcReaderJob):
     def output(self):
         """ Specify the output file name, which is based on the input file name."""
         out_name = "%s-cdx-verification-sampling-rate-%i.txt" % \
-                   (os.path.splitext(self.input_file)[0], self.sampling_rate)
+                   (os.path.splitext(os.path.basename(self.input_file))[0], self.sampling_rate)
         if self.from_local:
             return luigi.LocalTarget(out_name)
         else:
