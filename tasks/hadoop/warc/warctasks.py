@@ -5,7 +5,7 @@ import logging
 import luigi
 import luigi.contrib.hdfs
 import luigi.contrib.hadoop
-import warcio
+import warcio, six
 from warcio.recordloader import ArcWarcRecord
 import requests, urllib3, chardet, certifi, idna # Needed for HTTP actions
 
@@ -147,7 +147,7 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
 
     def extra_modules(self):
         # Always needs to include the root packages of everything that's imported above except luigi (because luigi handles that)
-        return [warcio,requests,urllib3,chardet,certifi,idna]
+        return [warcio,six,requests,urllib3,chardet,certifi,idna]
 
     def job_runner(self):
         outputs = luigi.task.flatten(self.output())
