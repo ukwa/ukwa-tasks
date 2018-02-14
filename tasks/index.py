@@ -74,7 +74,7 @@ class CdxIndexAndVerify(luigi.Task):
     stream = luigi.Parameter(default='npld')
 
     def requires(self):
-        return ListWarcsByDate(target_date=self.target_date, stream=self.stream, file_list_date=self.date)
+        return ListWarcsByDate(target_date=self.target_date, stream=self.stream, file_list_date=datetime.date.today())
 
     def output(self):
         target_date_string = self.target_date.strftime("%Y-%m-%d")
