@@ -1,4 +1,5 @@
 import os
+import re
 import random
 import logging
 import datetime
@@ -123,6 +124,8 @@ class CheckCdxIndex(HadoopWarcReaderJob):
             # Extract the URI and status code:
             record_url = record.rec_headers.get_header('WARC-Target-URI')
             timestamp = record.rec_headers.get_header('WARC-Date')
+            # Strip down to Wayback form:
+            timestamp = re.sub('[^0-9]','', timestamp)
             # Yield a random subset of the records:
             if random.randint(1, self.sampling_rate) == 1:
                 logger.info("Emitting a record: %s" % record_url)
@@ -154,7 +157,11 @@ class CheckCdxIndex(HadoopWarcReaderJob):
 
         failures = 0
         for timestamp in timestamps:
-            failures += 1
+            if timestamp in capturedates:
+                print("OK!?")
+            else:
+                print("MISS!!")
+                failures += 1
 
         if failures > 0:
             yield url, failures
