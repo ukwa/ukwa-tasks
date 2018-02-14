@@ -169,12 +169,12 @@ class ListUKWAFiles(luigi.Task):
         with self.output().open('w') as f:
             writer = csv.DictWriter(f, fieldnames=csv_fieldnames)
             writer.writeheader()
-            with self.input().open('r') as fin:
-                reader = csv.DictReader(fin, fieldnames=csv_fieldnames)
-                for item in reader:
-                    # Archive file names:
-                    if item['filename'].startswith('/data/') or item['filename'].startswith('/heritrix/'):
-                        writer.writerow(item)
+            for line in self.input().open('r'):
+                item = json.loads(line.strip())
+                item['filename'] = item['filename'].strip()
+                # Archive file names:
+                if item['filename'].startswith('/data/') or item['filename'].startswith('/heritrix/'):
+                    writer.writerow(item)
 
 
 class ListWebArchiveFiles(luigi.Task):
@@ -230,7 +230,7 @@ class ListUKWAWebArchiveFiles(luigi.Task):
 
 class ListUKWAFilesByCollection(luigi.Task):
     """
-    Takes the full WARC list and filters UKWA content by collection 'npld' or 'selective':
+    Takes the full file list and filters UKWA content by collection 'npld' or 'selective':
     """
     date = luigi.DateParameter(default=datetime.date.today())
     subset = luigi.Parameter(default='npld')
