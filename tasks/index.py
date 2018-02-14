@@ -177,4 +177,4 @@ if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
 
     #luigi.run(['CdxIndexAndVerify', '--local-scheduler', '--target-date', '2018-02-10'])
-    luigi.run(['CheckCdxIndex', '--input-file', 'test/input-files.txt', '--from-local', '--local-scheduler'])
+    luigi.run(['CheckCdxIndex', '--input-file', 'test/input-list.txt', '--from-local', '--local-scheduler'])
