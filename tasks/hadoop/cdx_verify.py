@@ -6,6 +6,7 @@ import logging
 import luigi
 import luigi.contrib
 import xml.dom.minidom
+from xml.parsers.expat import ExpatError
 import urllib
 from urllib import quote_plus  # python 2
 # from urllib.parse import quote_plus # python 3
@@ -60,7 +61,7 @@ class CheckCdxIndex(HadoopWarcReaderJob):
             timestamp = re.sub('[^0-9]','', timestamp)
             # Check a random subset of the records, always emitting the first record:
             if self.first or random.randint(1, self.sampling_rate) == 1:
-                logger.info("Checking a record: %s" % record_url)
+                logger.warn("Checking a record: %s" % record_url)
                 capture_dates = self.get_capture_dates(record_url)
                 if timestamp in capture_dates:
                     yield "HITS", 1
@@ -84,7 +85,7 @@ class CheckCdxIndex(HadoopWarcReaderJob):
             for de in dom.getElementsByTagName('capturedate'):
                 capture_dates.append(de.firstChild.nodeValue)
             f.close()
-        except xml.parsers.expat.ExpatError, e:
+        except ExpatError, e:
             logger.info("Exception on lookup: "  + str(e))
 
         return capture_dates
