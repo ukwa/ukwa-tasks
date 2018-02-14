@@ -45,7 +45,7 @@ class CdxIndexer(luigi.contrib.hadoop_jar.HadoopJarJobTask):
         return luigi.contrib.hdfs.HdfsTarget(out_name, format=luigi.contrib.hdfs.Plain)
 
     def requires(self):
-        return CopyToHDFS(input_file = self.warc_file_list, tag="warcs2cdx")
+        return CopyToHDFS(input_file = self.input_file, tag="warcs2cdx")
 
     def jar(self):
         return "./jars/warc-hadoop-recordreaders-2.2.0-BETA-7-SNAPSHOT-job.jar"

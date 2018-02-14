@@ -272,20 +272,12 @@ class ListUKWAFilesByCollection(luigi.Task):
                   'Total size of files on HDFS in bytes.',
                   labelnames=['collection', 'kind'], registry=registry)
         g.labels(collection=col, kind='all').set(self.total_bytes)
-
-        g = Gauge('ukwa_files_total_count',
-                  'Total number of files on HDFS.',
-                  labelnames=['collection', 'kind'], registry=registry)
-        g.labels(collection=col, kind='all').set(self.total_files)
-
-        g = Gauge('ukwa_files_total_bytes',
-                  'Total size of files on HDFS in bytes.',
-                  labelnames=['collection', 'kind'], registry=registry)
         g.labels(collection=col, kind='warcs').set(self.total_warc_bytes)
 
         g = Gauge('ukwa_files_total_count',
                   'Total number of files on HDFS.',
                   labelnames=['collection', 'kind'], registry=registry)
+        g.labels(collection=col, kind='all').set(self.total_files)
         g.labels(collection=col, kind='warcs').set(self.total_warc_files)
 
         # Old metrics (deprected, will be removed shortly):
