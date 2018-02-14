@@ -159,7 +159,8 @@ class CheckCdxIndex(HadoopWarcReaderJob):
         if failures > 0:
             yield url, failures
 
-        raise Exception("DIE")
+        if len(capturedates) > 0:
+            raise Exception("DIE")
 
 
 class CdxIndexAndVerify(luigi.Task):
