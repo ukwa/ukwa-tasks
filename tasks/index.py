@@ -1,18 +1,18 @@
 import os
-import xml
-import luigi
-import luigi.contrib.hdfs
-import luigi.contrib.hadoop_jar
 import random
 import logging
 import datetime
+import xml.dom.minidom
+import urllib
+from urllib import quote_plus  # python 2
+# from urllib.parse import quote_plus # python 3
+import luigi
+import luigi.contrib.hdfs
+import luigi.contrib.hadoop_jar
 from tasks.hdfs.listings import ListWarcsByDate
 from tasks.hadoop.warc.warctasks import HadoopWarcReaderJob
 from tasks.common import state_file, report_file
 from warcio.recordloader import ArcWarcRecord
-import urllib
-from urllib import quote_plus  # python 2
-# from urllib.parse import quote_plus # python 3
 
 logger = logging.getLogger('luigi-interface')
 
