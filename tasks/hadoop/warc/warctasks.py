@@ -184,7 +184,7 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
 
         ANJ: Modified to use the warcio parser instead of splitting lines.
         """
-        reader = warcio.ArchiveIterator(input_stream)
+        reader = warcio.ArchiveIterator(TellingReader(input_stream))
         for record in reader:
             if self.read_for_offset:
                 record.raw_offset = reader.get_record_offset()
