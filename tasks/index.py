@@ -96,10 +96,12 @@ class CheckCdxIndex(HadoopWarcReaderJob):
 
     """
 
-    sampling_rate = luigi.IntParameter(default=1)
+    sampling_rate = luigi.IntParameter(default=1000)
     cdx_server = luigi.Parameter(default="http://bigcdx:8080/data-heritrix")
 
     n_reduce_tasks = 10
+
+    first = True
 
     def __init__(self, **kwargs):
         """Ensure arguments are set up correctly."""
@@ -126,8 +128,8 @@ class CheckCdxIndex(HadoopWarcReaderJob):
             timestamp = record.rec_headers.get_header('WARC-Date')
             # Strip down to Wayback form:
             timestamp = re.sub('[^0-9]','', timestamp)
-            # Check a random subset of the records:
-            if random.randint(1, self.sampling_rate) == 1:
+            # Check a random subset of the records, always emitting the first record:
+            if self.first or random.randint(1, self.sampling_rate) == 1:
                 logger.info("Checking a record: %s" % record_url)
                 capture_dates = self.get_capture_dates(record_url)
                 if timestamp in capture_dates:
@@ -136,6 +138,8 @@ class CheckCdxIndex(HadoopWarcReaderJob):
                     yield "MISS", record_url
                 # Keep track of checked records:
                 yield "SAMPLE_SIZE", 1
+                # Flag that the first record has been emitted:
+                self.first = False
             # Keep track of total records:
             yield "TOTAL", 1
 
@@ -150,8 +154,8 @@ class CheckCdxIndex(HadoopWarcReaderJob):
             for de in dom.getElementsByTagName('capturedate'):
                 capture_dates.append(de.firstChild.nodeValue)
             f.close()
-        except Exception, e:
-            logger.info("Exception on lookup: "  + e)
+        except xml.parsers.expat.ExpatError, e:
+            logger.info("Exception on lookup: "  + str(e))
 
         return capture_dates
 
@@ -190,7 +194,7 @@ class CdxIndexAndVerify(luigi.Task):
         #index_task = CdxIndexer(self.input().path)
         #yield index_task
         # Then yield another job to check it worked:
-        verify_task = CheckCdxIndex(input_file=self.input().path, from_local=True)
+        verify_task = CheckCdxIndex(input_file=self.input().path)
         yield verify_task
         # If it worked, record it here.
         pass
