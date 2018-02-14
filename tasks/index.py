@@ -59,7 +59,7 @@ class CdxIndexer(luigi.contrib.hadoop_jar.HadoopJarJobTask):
             "-Dmapred.compress.map.output=true",
             "-Dmapred.output.compress=true",
             "-Dmapred.output.compression.codec=org.apache.hadoop.io.compress.GzipCodec"
-            "-i", self.requires().path,
+            "-i", self.input().path,
             "-o", self.output().path,
             "-r", self.num_reducers,
             "-w",
