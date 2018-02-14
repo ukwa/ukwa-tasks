@@ -1,4 +1,5 @@
 import os
+import xml
 import luigi
 import luigi.contrib.hdfs
 import luigi.contrib.hadoop_jar
@@ -94,9 +95,10 @@ class CheckCdxIndex(HadoopWarcReaderJob):
 
     """
 
+    sampling_rate = luigi.IntParameter(default=1)
+    cdx_server = luigi.Parameter(default="http://bigcdx:8080/data-heritrix")
+
     n_reduce_tasks = 10
-    sampling_rate = 100
-    cdx_server = "http://bigcdx:8080/data-heritrix"
 
     def __init__(self, **kwargs):
         """Ensure arguments are set up correctly."""
@@ -104,7 +106,8 @@ class CheckCdxIndex(HadoopWarcReaderJob):
 
     def output(self):
         """ Specify the output file name, which is based on the input file name."""
-        out_name = "%s-cdx-verification.txt" % os.path.splitext(self.input_file)[0]
+        out_name = "%s-cdx-verification-sampling-rate-%i.txt" % \
+                   (os.path.splitext(self.input_file)[0], self.sampling_rate)
         if self.from_local:
             return luigi.LocalTarget(out_name)
         else:
@@ -137,9 +140,16 @@ class CheckCdxIndex(HadoopWarcReaderJob):
         # Get the hits for this URL:
         q = "type:urlquery url:" + quote_plus(url)
         cdx_query_url = "%s?q=%s" % (self.cdx_server, quote_plus(q))
-        f = urllib.urlopen(cdx_query_url)
-        for line in f.readlines():
-            print(line)
+        capturedates = []
+        try:
+            with urllib.urlopen(cdx_query_url) as f:
+                dom = xml.dom.minidom.parseString(f.read())
+                for de in dom.getElementsByTagName('capturedate'):
+                    capturedates.append(de.firstChild.nodeValue)
+        except Exception, e:
+            print(e)
+
+        print(capturedates)
 
         failures = 0
         for timestamp in timestamps:
@@ -177,4 +187,5 @@ if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
 
     #luigi.run(['CdxIndexAndVerify', '--local-scheduler', '--target-date', '2018-02-10'])
-    luigi.run(['CheckCdxIndex', '--input-file', 'test/input-list.txt', '--from-local', '--local-scheduler'])
+    input = os.path.join(os.getcwd(),'test/input-list.txt')
+    luigi.run(['CheckCdxIndex', '--input-file', input, '--from-local', '--local-scheduler'])
