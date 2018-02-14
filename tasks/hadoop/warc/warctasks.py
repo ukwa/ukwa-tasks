@@ -65,10 +65,10 @@ class ExternalFilesFromList(luigi.ExternalTask):
             line = line.strip()
             if line:
                 if self.from_local:
-                    logger.info("Yielding local target: %s" % line)
+                    logger.debug("Yielding local target: %s" % line)
                     yield luigi.LocalTarget(path=line)
                 else:
-                    logger.info("Yielding HDFS target: %s" % line)
+                    logger.debug("Yielding HDFS target: %s" % line)
                     yield luigi.contrib.hdfs.HdfsTarget(line, format=luigi.contrib.hdfs.format.PlainFormat)
 
 
@@ -143,7 +143,7 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         return ExternalFilesFromList(self.input_file, from_local=self.from_local)
 
     def extra_files(self):
-        return [os.environ.get("LUIGI_CONFIG_PATH")]
+        return []
 
     def extra_modules(self):
         # Always needs to include the root packages of everything that's imported above except luigi (because luigi handles that)
