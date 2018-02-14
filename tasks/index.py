@@ -23,7 +23,7 @@ class CopyToHDFS(luigi.Task):
     task_namespace = "hdfs"
 
     def output(self):
-        full_path = os.path.join(self.tag, self.input_file)
+        full_path = os.path.join(self.tag, os.path.basename(self.input_file))
         return luigi.contrib.hdfs.HdfsTarget(full_path, format=luigi.contrib.hdfs.PlainFormat())
 
     def run(self):
@@ -43,7 +43,7 @@ class CdxIndexer(luigi.contrib.hadoop_jar.HadoopJarJobTask):
     task_namespace = "index"
 
     def output(self):
-        out_name = "%s-submitted.txt" % os.path.splitext(self.input_file)[0]
+        out_name = os.path.join("warcs2cdx", "%s-submitted.txt" % os.path.splitext(self.input_file)[0])
         return luigi.contrib.hdfs.HdfsTarget(out_name, format=luigi.contrib.hdfs.Plain)
 
     def requires(self):
