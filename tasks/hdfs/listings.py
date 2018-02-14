@@ -300,8 +300,6 @@ class ListUKWAFilesByCollection(luigi.Task):
         g.labels(collection=col).set(self.total_warc_files)
 
 
-
-
 class ListDuplicateWebArchiveFiles(luigi.Task):
     """
     Takes the full WARC list and filters UKWA content by folder:
@@ -347,6 +345,107 @@ class ListDuplicateWebArchiveFiles(luigi.Task):
                 else:
                     self.total_unduplicated += 1
         logger.info("Of %i WARC filenames, %i are stored in a single HDFS location." % (len(filenames), self.total_unduplicated))
+
+
+class ListWarcFileSets(luigi.Task):
+    """
+    Lists the WARCS and arranges them by date:
+    """
+    date = luigi.DateParameter(default=datetime.date(2018,02,12))
+    stream = luigi.Parameter(default='npld')
+
+    def requires(self):
+        return ListUKWAFilesByCollection(self.date, self.stream)
+
+    #def complete(self):
+    #    return False
+
+    def output(self):
+        return state_file(self.date, 'hdfs', 'warc-filesets.txt')
+
+    def run(self):
+        # Go through the data and assemble the resources for each crawl:
+        filenames = []
+        with self.input().open('r') as fin:
+            reader = csv.DictReader(fin, fieldnames=csv_fieldnames)
+            for item in reader:
+                # Archive file names:
+                file_path = item['filename']
+                # Look at WARCS:
+                if file_path.endswith('.warc.gz'):
+                    filenames.append(file_path)
+
+        # Sanity check:
+        if len(filenames) == 0:
+            raise Exception("No filenames generated! Something went wrong!")
+
+        # Finally, emit the list of output files as the task output:
+        filenames = sorted(filenames)
+        counter = 0
+        with self.output().open('w') as f:
+            for output_path in filenames:
+                if counter > 0:
+                    if counter % 10000 == 0:
+                        f.write('\n')
+                    else:
+                        f.write(' ')
+                f.write('%s' % output_path)
+                counter += 1
+
+
+class ListWarcsByDate(luigi.Task):
+    """
+    Lists the WARCS with datestamps corresponding to a particular day. Defaults to yesterday.
+    """
+    target_date = luigi.DateParameter(default=datetime.date.today() - datetime.timedelta(1))
+    stream = luigi.Parameter(default='npld')
+    file_list_date = luigi.DateParameter(default=datetime.date(2018,02,12))
+
+    def requires(self):
+        # Get todays list:
+        return ListUKWAFilesByCollection(self.file_list_date, self.stream)
+
+    def output(self):
+        target_date_string = self.target_date.strftime("%Y-%m-%d")
+        return state_file(self.file_list_date, 'warcs', 'warc-files-for-%s.txt'% target_date_string )
+
+    def complete(self):
+        # Override complete so we can catch if the list has changed.
+        if not self.output().exists():
+            return False
+        else:
+            return True
+
+    def generate_day_list(self):
+        # Go through the data and find the WARCs for each day:
+        target_datestamp = self.target_date.strftime("%Y-%m-%d")
+        filenames = []
+        with self.input().open('r') as fin:
+            reader = csv.DictReader(fin, fieldnames=csv_fieldnames)
+            for item in reader:
+                # Archive file names:
+                file_path = item['filename']
+                # Look at WARCS:
+                if file_path.endswith('.warc.gz'):
+                    m = re.search('^.*-([12][0-9]{16})-.*\.warc\.gz$', os.path.basename(file_path))
+                    if m:
+                        file_timestamp = datetime.datetime.strptime(m.group(1), "%Y%m%d%H%M%S%f").isoformat()
+                    else:
+                        # fall back on launch timestamp:
+                        file_timestamp = item['modified_at']
+                    file_datestamp = file_timestamp[0:10]
+
+                    if file_datestamp == target_datestamp:
+                        filenames.append(file_path)
+
+        return filenames
+
+    def run(self):
+        # Emit the list of output files as the task output:
+        filenames = self.generate_day_list()
+        with self.output().open('w') as f:
+            for output_path in filenames:
+                f.write('%s\n' % output_path)
 
 
 class ListByCrawl(luigi.Task):
@@ -496,5 +595,5 @@ if __name__ == '__main__':
 
     logging.getLogger().setLevel(logging.INFO)
     #luigi.run(['ListUKWAWebArchiveFilesOnHDFS', '--local-scheduler'])
-    luigi.run(['ListByCrawl', '--local-scheduler'])
+    luigi.run(['ListWarcsByDate', '--local-scheduler', '--target-date', '2018-02-10'])
     #luigi.run(['ListEmptyFilesOnHDFS', '--local-scheduler'])
