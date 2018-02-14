@@ -107,10 +107,14 @@ class BinaryInputHadoopJobRunner(luigi.contrib.hadoop.HadoopJobRunner):
     def __init__(self):
         config = luigi.configuration.get_config()
         streaming_jar = config.get('hadoop', 'streaming-jar')
+        # Find our JAR:
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        jar_path = os.path.join(dir_path, "../../jars/warc-hadoop-recordreaders-2.2.0-BETA-7-SNAPSHOT-job.jar")
+        # Setup:
         super(BinaryInputHadoopJobRunner, self).__init__(
             streaming_jar=streaming_jar,
             input_format="uk.bl.wa.hadoop.mapred.UnsplittableInputFileFormat",
-            libjars=["./jars/warc-hadoop-recordreaders-2.2.0-BETA-7-SNAPSHOT-job.jar"])
+            libjars=[jar_path])
 
 
 class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
