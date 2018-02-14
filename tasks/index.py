@@ -6,6 +6,7 @@ import datetime
 from tasks.hdfs.listings import ListWarcsByDate
 from tasks.common import state_file, report_file
 
+
 class CopyToHDFS(luigi.Task):
     """
     This task lists all files on HDFS (skipping directories).
@@ -22,7 +23,7 @@ class CopyToHDFS(luigi.Task):
     task_namespace = "hdfs"
 
     def output(self):
-        return state_file(self.date,self.tag ,self.input_file, on_hdfs=True, use_gzip=True)
+        return state_file(self.date,self.tag ,self.input_file, on_hdfs=True, use_gzip=True, use_webhdfs=False)
 
     def run(self):
         # Read the file in and write it to HDFS
