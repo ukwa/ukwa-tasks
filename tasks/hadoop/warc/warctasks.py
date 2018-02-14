@@ -87,9 +87,9 @@ class TellingReader():
         self.pos = 0
 
     def read(self, size=None):
-        logger.warning("read()ing from current position: %i" % self.pos)
+        logger.warning("read()ing from current position: %i, size=%s" % (self.pos, size))
         chunk = self.stream.read(size)
-        logger.warning("read() %s" % chunk)
+        #logger.warning("read() %s" % chunk)
         self.pos += len(chunk)
         logger.warning("read()ing current position now: %i" % self.pos)
         return chunk
@@ -192,12 +192,14 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
 
         ANJ: Modified to use the warcio parser instead of splitting lines.
         """
+        # Wrap the stream in a handy Reader:
+        stream = TellingReader(input_stream)
         # Parse the start of the input stream, which is <filename>\t<filedata>
-        c = ""
+        c = ''
         while c != '\t':
-            c = input_stream.read(1)
+            c = stream.read(1)
         # Having consumed the 'key', read the payload:
-        reader = warcio.ArchiveIterator(TellingReader(input_stream))
+        reader = warcio.ArchiveIterator(stream)
         for record in reader:
             if self.read_for_offset:
                 record.raw_offset = reader.get_record_offset()
