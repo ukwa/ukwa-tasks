@@ -126,20 +126,20 @@ class CheckCdxIndex(HadoopWarcReaderJob):
             timestamp = record.rec_headers.get_header('WARC-Date')
             # Strip down to Wayback form:
             timestamp = re.sub('[^0-9]','', timestamp)
-            # Yield a random subset of the records:
+            # Check a random subset of the records:
             if random.randint(1, self.sampling_rate) == 1:
-                logger.info("Emitting a record: %s" % record_url)
-                yield record_url, timestamp
+                logger.info("Checking a record: %s" % record_url)
+                capture_dates = self.get_capture_dates(record_url)
+                if timestamp in capture_dates:
+                    yield "HITS", 1
+                else:
+                    yield "MISS", record_url
+                # Keep track of checked records:
+                yield "SAMPLE_SIZE", 1
+            # Keep track of total records:
+            yield "TOTAL", 1
 
-    def reducer(self, url, timestamps):
-        """
-        This takes the URL and Status Code and verifies that it's in the CDX Server
-
-        :param key:
-        :param values:
-        :return:
-        """
-
+    def get_capture_dates(self, url):
         # Get the hits for this URL:
         q = "type:urlquery url:" + quote_plus(url)
         cdx_query_url = "%s?q=%s" % (self.cdx_server, quote_plus(q))
@@ -151,21 +151,27 @@ class CheckCdxIndex(HadoopWarcReaderJob):
                 capture_dates.append(de.firstChild.nodeValue)
             f.close()
         except Exception, e:
-            print(e)
+            logger.info("Exception on lookup: "  + e)
 
-        print(capture_dates, timestamps)
+        return capture_dates
 
-        misses = 0
-        hits = 0
-        for timestamp in timestamps:
-            if timestamp in capture_dates:
-                print("OK!?")
-                hits += 1
-            else:
-                print("MISS!!")
-                misses += 1
+    def reducer(self, key, values):
+        """
+        This counts the output conditions:
 
-        yield url, "%i\t%i" %( hits, misses )
+        :param key:
+        :param values:
+        :return:
+        """
+
+        if key == "MISS":
+            count = 0
+            for value in values:
+                yield key, value
+                count += 1
+            yield "MISSES", count
+        else:
+            yield key, sum(values)
 
 
 class CdxIndexAndVerify(luigi.Task):
