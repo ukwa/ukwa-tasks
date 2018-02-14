@@ -87,19 +87,19 @@ class TellingReader():
         self.pos = 0
 
     def read(self, size=None):
-        logger.warning("read()ing from current position: %i, size=%s" % (self.pos, size))
+        #logger.warning("read()ing from current position: %i, size=%s" % (self.pos, size))
         chunk = self.stream.read(size)
-        #logger.warning("read() %s" % chunk)
+        ##logger.warning("read() %s" % chunk)
         self.pos += len(chunk)
-        logger.warning("read()ing current position now: %i" % self.pos)
+        #logger.warning("read()ing current position now: %i" % self.pos)
         return chunk
 
     def readline(self, size=None):
-        logger.warning("readline()ing from current position: %i" % self.pos)
+        #logger.warning("readline()ing from current position: %i" % self.pos)
         line = self.stream.readline(size)
-        logger.warning("readline() %s" % line)
+        #logger.warning("readline() %s" % line)
         self.pos += len(bytes(line))
-        logger.warning("readline()ing current position now: %i" % self.pos)
+        #logger.warning("readline()ing current position now: %i" % self.pos)
         return line
 
     def tell(self):
