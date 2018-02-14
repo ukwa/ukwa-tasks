@@ -117,7 +117,7 @@ class BinaryInputHadoopJobRunner(luigi.contrib.hadoop.HadoopJobRunner):
         streaming_jar = config.get('hadoop', 'streaming-jar')
         # Find our JAR:
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        jar_path = os.path.join(dir_path, "../../jars/warc-hadoop-recordreaders-2.2.0-BETA-7-SNAPSHOT-job.jar")
+        jar_path = os.path.join(dir_path, "../../jars/warc-hadoop-recordreaders-3.0.0-SNAPSHOT-job.jar")
         # Setup:
         super(BinaryInputHadoopJobRunner, self).__init__(
             streaming_jar=streaming_jar,

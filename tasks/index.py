@@ -55,7 +55,7 @@ class CdxIndexer(luigi.contrib.hadoop_jar.HadoopJarJobTask):
 
     def jar(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        return os.path.join(dir_path, "jars/warc-hadoop-recordreaders-2.2.0-BETA-7-SNAPSHOT-job.jar")
+        return os.path.join(dir_path, "jars/warc-hadoop-recordreaders-3.0.0-SNAPSHOT-job.jar")
 
     def main(self):
         return "uk.bl.wa.hadoop.mapreduce.cdx.ArchiveCDXGenerator"
