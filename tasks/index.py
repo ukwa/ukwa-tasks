@@ -2,9 +2,15 @@ import os
 import luigi
 import luigi.contrib.hdfs
 import luigi.contrib.hadoop_jar
+import random
 import datetime
 from tasks.hdfs.listings import ListWarcsByDate
+from tasks.hadoop.warc.warctasks import HadoopWarcReaderJob
 from tasks.common import state_file, report_file
+from warcio.recordloader import ArcWarcRecord
+import urllib
+from urllib import quote_plus  # python 2
+# from urllib.parse import quote_plus # python 3
 
 
 class CopyToHDFS(luigi.Task):
@@ -61,8 +67,8 @@ class CdxIndexer(luigi.contrib.hadoop_jar.HadoopJarJobTask):
             "-Dmapred.compress.map.output=true",
             "-Dmapred.output.compress=true",
             "-Dmapred.output.compression.codec=org.apache.hadoop.io.compress.GzipCodec",
-            "-i", self.input().path,
-            "-o", self.output().path,
+            "-i", self.input(),
+            "-o", self.output(),
             "-r", self.num_reducers,
             "-w",
             "-h",
@@ -70,6 +76,73 @@ class CdxIndexer(luigi.contrib.hadoop_jar.HadoopJarJobTask):
             "-t", self.cdx_server,
             "-c", "CDX N b a m s k r M S V g"
         ]
+
+
+class CheckCdxIndex(HadoopWarcReaderJob):
+    """
+    Picks a sample of URLs from some WARCs and checks they are in the CDX index.
+
+    Parameters:
+        input_file: The path for the file that contains the list of WARC files to process
+        from_local: Whether the paths refer to files on HDFS or local files
+        read_for_offset: Whether the WARC parser should read the whole record so it can populate the
+                         record.raw_offset and record.raw_length fields (good for CDX indexing). Enabling this will
+                         mean the reader has consumed the content body so your job will not have access to it.
+
+    """
+
+    n_reduce_tasks = 10
+    sampling_rate = 100
+    cdx_server = "http://bigcdx:8080/data-heritrix"
+
+    def __init__(self, **kwargs):
+        """Ensure arguments are set up correctly."""
+        super(CheckCdxIndex, self).__init__(**kwargs)
+
+    def output(self):
+        """ Specify the output file name, which is based on the input file name."""
+        out_name = "%s-cdx-verification.txt" % os.path.splitext(self.input_file)[0]
+        if self.from_local:
+            return luigi.LocalTarget(out_name)
+        else:
+            return luigi.contrib.hdfs.HdfsTarget(out_name, format=luigi.contrib.hdfs.PlainFormat)
+
+    def mapper(self, record):
+        # type: (ArcWarcRecord) -> [(str, str)]
+        """ Takes the parsed WARC record and extracts some basic stats."""
+
+        # Only look at valid response records:
+        if record.rec_type == 'response' and record.content_type.startswith(b'application/http'):
+
+            # Extract the URI and status code:
+            record_url = record.rec_headers.get_header('WARC-Target-URI')
+            timestamp = record.rec_headers.get_header('WARC-Date')
+            # Yield a random subset of the records:
+            if random.randint(1, self.sampling_rate) == 1:
+                yield record_url, timestamp
+
+    def reducer(self, url, timestamps):
+        """
+        This takes the URL and Status Code and verifies that it's in the CDX Server
+
+        :param key:
+        :param values:
+        :return:
+        """
+
+        # Get the hits for this URL:
+        q = "type:urlquery url:" + quote_plus(url)
+        cdx_query_url = "%s?q=%s" % (self.cdx_server, quote_plus(q))
+        f = urllib.urlopen(cdx_query_url)
+        for line in f.readlines():
+            print(line)
+
+        failures = 0
+        for timestamp in timestamps:
+            failures += 1
+
+        if failures > 0:
+            yield url, failures
 
 
 class CdxIndexAndVerify(luigi.Task):
@@ -85,11 +158,13 @@ class CdxIndexAndVerify(luigi.Task):
 
     def run(self):
         # First, yield a Hadoop job to run the indexer:
-        index_task = CdxIndexer(self.input().path)
-        yield index_task
+        #index_task = CdxIndexer(self.input().path)
+        #yield index_task
         # Then yield another job to check it worked:
-        #verify_task = ...
+        verify_task = CheckCdxIndex(input_file=self.input().path, from_local=True)
+        yield verify_task
         # If it worked, record it here.
+        pass
 
 
 if __name__ == '__main__':
