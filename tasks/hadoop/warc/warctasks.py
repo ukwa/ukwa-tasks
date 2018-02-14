@@ -143,7 +143,7 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         return ExternalFilesFromList(self.input_file, from_local=self.from_local)
 
     def extra_files(self):
-        return ["luigi.cfg"]
+        return [os.environ.get("LUIGI_CONFIG_PATH")]
 
     def extra_modules(self):
         # Always needs to include the root packages of everything that's imported above except luigi (because luigi handles that)
