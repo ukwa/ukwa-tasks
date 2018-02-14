@@ -3,6 +3,7 @@ import luigi
 import luigi.contrib.hdfs
 import luigi.contrib.hadoop_jar
 import random
+import logging
 import datetime
 from tasks.hdfs.listings import ListWarcsByDate
 from tasks.hadoop.warc.warctasks import HadoopWarcReaderJob
@@ -11,6 +12,8 @@ from warcio.recordloader import ArcWarcRecord
 import urllib
 from urllib import quote_plus  # python 2
 # from urllib.parse import quote_plus # python 3
+
+logger = logging.getLogger('luigi-interface')
 
 
 class CopyToHDFS(luigi.Task):
@@ -119,6 +122,7 @@ class CheckCdxIndex(HadoopWarcReaderJob):
             timestamp = record.rec_headers.get_header('WARC-Date')
             # Yield a random subset of the records:
             if random.randint(1, self.sampling_rate) == 1:
+                logger.info("Emitting a record: %s" % record_url)
                 yield record_url, timestamp
 
     def reducer(self, url, timestamps):
@@ -171,6 +175,6 @@ if __name__ == '__main__':
     import logging
 
     logging.getLogger().setLevel(logging.INFO)
-    #luigi.run(['ListUKWAWebArchiveFilesOnHDFS', '--local-scheduler'])
-    luigi.run(['CdxIndexAndVerify', '--local-scheduler', '--target-date', '2018-02-10'])
-    #luigi.run(['ListEmptyFilesOnHDFS', '--local-scheduler'])
+
+    #luigi.run(['CdxIndexAndVerify', '--local-scheduler', '--target-date', '2018-02-10'])
+    luigi.run(['CheckCdxIndex', '--input-file', 'test/input-files.txt', '--from-local', '--local-scheduler'])

@@ -65,8 +65,10 @@ class ExternalFilesFromList(luigi.ExternalTask):
             line = line.strip()
             if line:
                 if self.from_local:
+                    logger.info("Yielding local target: %s"+ line)
                     yield luigi.LocalTarget(path=line)
                 else:
+                    logger.info("Yielding HDFS target: %s"+ line)
                     yield luigi.contrib.hdfs.HdfsTarget(line, format=luigi.contrib.hdfs.format.PlainFormat)
 
 
