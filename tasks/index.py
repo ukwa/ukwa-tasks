@@ -23,7 +23,8 @@ class CopyToHDFS(luigi.Task):
     task_namespace = "hdfs"
 
     def output(self):
-        return state_file(self.date,self.tag ,self.input_file, on_hdfs=True, use_gzip=True, use_webhdfs=False)
+        full_path = os.path.join(self.tag, self.input_file)
+        return luigi.contrib.hdfs.HdfsTarget(full_path, format=luigi.contrib.hdfs.PlainFormat())
 
     def run(self):
         # Read the file in and write it to HDFS
@@ -59,7 +60,7 @@ class CdxIndexer(luigi.contrib.hadoop_jar.HadoopJarJobTask):
         return [
             "-Dmapred.compress.map.output=true",
             "-Dmapred.output.compress=true",
-            "-Dmapred.output.compression.codec=org.apache.hadoop.io.compress.GzipCodec"
+            "-Dmapred.output.compression.codec=org.apache.hadoop.io.compress.GzipCodec",
             "-i", self.input().path,
             "-o", self.output().path,
             "-r", self.num_reducers,
