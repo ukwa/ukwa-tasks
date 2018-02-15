@@ -1,7 +1,7 @@
 import os
 import io
 import sys
-import StringIO
+import binascii
 import logging
 import luigi
 import luigi.contrib.hdfs
@@ -90,19 +90,18 @@ class TellingReader():
     def read(self, size=None):
         #logger.warning("read()ing from current position: %i, size=%s" % (self.pos, size))
         chunk = self.stream.read(size)
-        ##logger.warning("read() %s" % chunk)
-        self.pos += len(chunk)
         if len(chunk) == 0:
-            logger.warning("read() 0 bytes, current position now: %i" % self.pos)
+            logger.warning("read() 0 bytes, current position: %i" % self.pos)
         else:
-            logger.warning("CHUNK:%s" % chunk[:1024])
+            logger.warning("read() %s" % binascii.hexlify(chunk[:64]))
+        self.pos += len(chunk)
         #logger.warning("read()ing current position now: %i" % self.pos)
         return chunk
 
     def readline(self, size=None):
         #logger.warning("readline()ing from current position: %i" % self.pos)
         line = self.stream.readline(size)
-        #logger.warning("readline() %s" % line)
+        logger.warning("readline() %s" % line)
         self.pos += len(bytes(line))
         #logger.warning("readline()ing current position now: %i" % self.pos)
         return line
