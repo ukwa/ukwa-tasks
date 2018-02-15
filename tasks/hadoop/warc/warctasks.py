@@ -125,7 +125,7 @@ class BinaryInputHadoopJobRunner(luigi.contrib.hadoop.HadoopJobRunner):
         # Setup:
         super(BinaryInputHadoopJobRunner, self).__init__(
             streaming_jar=streaming_jar,
-            input_format="uk.bl.wa.hadoop.mapreduce.lib.input.UnsplittableInputFileFormat",
+            input_format="uk.bl.wa.hadoop.mapred.UnsplittableInputFileFormat",
             libjars=[jar_path])
 
 
