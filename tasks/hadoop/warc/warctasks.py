@@ -103,7 +103,7 @@ class TellingReader():
         return line
 
     def tell(self):
-        logger.warning("tell()ing current position: %i" % self.pos)
+        #logger.debug("tell()ing current position: %i" % self.pos)
         return self.pos
 
 
@@ -201,10 +201,11 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
             c = stream.read(1)
             name.append(c)
         name = ''.join(name)
-        logger.info("Got file name %s" % name)
+        logger.warning("Got file name %s" % name)
         # Having consumed the 'key', read the payload:
         reader = warcio.ArchiveIterator(stream)
         for record in reader:
+            logger.warning("Got record: %s %s" % (record.rec_type, record.rec_type ))
             if self.read_for_offset:
                 record.raw_offset = reader.get_record_offset()
                 record.raw_length = reader.get_record_length()

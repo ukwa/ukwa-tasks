@@ -29,6 +29,7 @@ class CheckCdxIndex(HadoopWarcReaderJob):
 
     sampling_rate = luigi.IntParameter(default=1000)
     cdx_server = luigi.Parameter(default="http://bigcdx:8080/data-heritrix")
+    read_for_offset = True
 
     n_reduce_tasks = 10
 
