@@ -90,11 +90,11 @@ class TellingReader():
     def read(self, size=None):
         #logger.warning("read()ing from current position: %i, size=%s" % (self.pos, size))
         chunk = self.stream.read(size)
-        if len(chunk) == 0:
+        if len(bytes(chunk)) == 0:
             logger.warning("read() 0 bytes, current position: %i" % self.pos)
         #else:
         #    logger.warning("read() %s" % binascii.hexlify(chunk[:64]))
-        self.pos += len(chunk)
+        self.pos += len(bytes(chunk))
         #logger.warning("read()ing current position now: %i" % self.pos)
         return chunk
 
@@ -210,7 +210,7 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         reader = warcio.ArchiveIterator(wrapped_stream)
         for record in reader:
             logger.warning("Got record: %s %s" % (record.rec_type, record.rec_type ))
-            logger.warning("Record: %s" % record.content_stream().read()[:256])
+            logger.warning("Record: %s" % record.content_stream().read()[:128])
             if self.read_for_offset:
                 record.raw_offset = reader.get_record_offset()
                 record.raw_length = reader.get_record_length()
