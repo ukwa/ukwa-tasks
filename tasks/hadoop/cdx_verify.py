@@ -58,7 +58,7 @@ class CheckCdxIndex(HadoopWarcReaderJob):
             # Extract the URI and status code:
             record_url = record.rec_headers.get_header('WARC-Target-URI')
             timestamp = record.rec_headers.get_header('WARC-Date')
-            logger.warn("Found a record: %s" % record_url)
+            logger.warning("Found a response record: %s @ %s" % (record_url,timestamp) )
             # Strip down to Wayback form:
             timestamp = re.sub('[^0-9]','', timestamp)
             # Check a random subset of the records, always emitting the first record:
