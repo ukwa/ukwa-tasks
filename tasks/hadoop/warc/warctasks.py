@@ -92,8 +92,8 @@ class TellingReader():
         chunk = self.stream.read(size)
         if len(chunk) == 0:
             logger.warning("read() 0 bytes, current position: %i" % self.pos)
-        else:
-            logger.warning("read() %s" % binascii.hexlify(chunk[:64]))
+        #else:
+        #    logger.warning("read() %s" % binascii.hexlify(chunk[:64]))
         self.pos += len(chunk)
         #logger.warning("read()ing current position now: %i" % self.pos)
         return chunk
@@ -101,7 +101,7 @@ class TellingReader():
     def readline(self, size=None):
         #logger.warning("readline()ing from current position: %i" % self.pos)
         line = self.stream.readline(size)
-        logger.warning("readline() %s" % line)
+        #logger.warning("readline() %s" % line)
         self.pos += len(bytes(line))
         #logger.warning("readline()ing current position now: %i" % self.pos)
         return line
@@ -125,7 +125,7 @@ class BinaryInputHadoopJobRunner(luigi.contrib.hadoop.HadoopJobRunner):
         # Setup:
         super(BinaryInputHadoopJobRunner, self).__init__(
             streaming_jar=streaming_jar,
-            input_format="uk.bl.wa.hadoop.mapred.UnsplittableInputFileFormat",
+            input_format="uk.bl.wa.hadoop.mapreduce.lib.input.UnsplittableInputFileFormat",
             libjars=[jar_path])
 
 
@@ -210,7 +210,7 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         reader = warcio.ArchiveIterator(wrapped_stream)
         for record in reader:
             logger.warning("Got record: %s %s" % (record.rec_type, record.rec_type ))
-            logger.warning("Record: %s" + record.content_stream().read()[:256])
+            logger.warning("Record: %s" % record.content_stream().read()[:256])
             if self.read_for_offset:
                 record.raw_offset = reader.get_record_offset()
                 record.raw_length = reader.get_record_length()
