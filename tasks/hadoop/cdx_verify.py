@@ -11,7 +11,7 @@ import urllib
 from urllib import quote_plus  # python 2
 # from urllib.parse import quote_plus # python 3
 
-logger = logging.getLogger('__name__')
+logger = logging.getLogger(__name__)
 
 
 class CheckCdxIndex(HadoopWarcReaderJob):
@@ -27,7 +27,7 @@ class CheckCdxIndex(HadoopWarcReaderJob):
 
     """
 
-    sampling_rate = luigi.IntParameter(default=1000)
+    sampling_rate = luigi.IntParameter(default=100)
     cdx_server = luigi.Parameter(default="http://bigcdx:8080/data-heritrix")
     read_for_offset = True
 
@@ -58,6 +58,7 @@ class CheckCdxIndex(HadoopWarcReaderJob):
             # Extract the URI and status code:
             record_url = record.rec_headers.get_header('WARC-Target-URI')
             timestamp = record.rec_headers.get_header('WARC-Date')
+            logger.warn("Found a record: %s" % record_url)
             # Strip down to Wayback form:
             timestamp = re.sub('[^0-9]','', timestamp)
             # Check a random subset of the records, always emitting the first record:
