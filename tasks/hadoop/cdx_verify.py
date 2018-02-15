@@ -80,7 +80,8 @@ class CheckCdxIndex(HadoopWarcReaderJob):
         cdx_query_url = "%s?q=%s" % (self.cdx_server, quote_plus(q))
         capture_dates = []
         try:
-            f = urllib.urlopen(cdx_query_url)
+            proxies = { 'http': 'http://explorer:3127'}
+            f = urllib.urlopen(cdx_query_url, proxies=proxies)
             dom = xml.dom.minidom.parseString(f.read())
             for de in dom.getElementsByTagName('capturedate'):
                 capture_dates.append(de.firstChild.nodeValue)
