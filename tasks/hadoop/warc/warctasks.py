@@ -210,7 +210,7 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         reader = warcio.ArchiveIterator(wrapped_stream)
         for record in reader:
             logger.warning("Got record: %s %s" % (record.rec_type, record.rec_type ))
-            logger.warning("Record: %s" + record.content_stream()[:256])
+            logger.warning("Record: %s" + record.content_stream().read()[:256])
             if self.read_for_offset:
                 record.raw_offset = reader.get_record_offset()
                 record.raw_length = reader.get_record_length()
