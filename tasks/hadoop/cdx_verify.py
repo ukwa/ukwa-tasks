@@ -109,3 +109,13 @@ class CheckCdxIndex(HadoopWarcReaderJob):
             yield "MISSES", count
         else:
             yield key, sum(values)
+
+
+if __name__ == '__main__':
+    import logging
+
+    logging.getLogger().setLevel(logging.INFO)
+    luigi.interface.setup_interface_logging()
+
+    input = os.path.join(os.getcwd(),'test/input-list.txt')
+    luigi.run(['CheckCdxIndex', '--input-file', input, '--from-local', '--local-scheduler'])

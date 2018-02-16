@@ -84,8 +84,8 @@ class ExternalFilesFromList(luigi.ExternalTask):
 class TellingReader():
     def __init__(self, stream):
         # Ensure open in binary mode:
-        self.stream = io.open(stream.fileno(), 'rb')
-        #self.stream = stream
+        #self.stream = io.open(stream.fileno(), 'rb')
+        self.stream = stream
         self.pos = 0
 
     def read(self, size=None):
@@ -162,6 +162,11 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         # Always needs to include the root packages of everything that's imported above except luigi (because luigi handles that)
         return [warcio,six,requests,urllib3,chardet,certifi,idna]
 
+    def jobconfs(self):
+        jcs = super(HadoopWarcReaderJob, self).jobconfs()
+        jcs.append('stream.map.input.field.separator=\\0')
+        return jcs
+
     def job_runner(self):
         outputs = luigi.task.flatten(self.output())
         for output in outputs:
@@ -201,7 +206,7 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         wrapped_stream = TellingReader(input_stream)
         c = ''
         name = []
-        while c != '\t':
+        while c != '\0':
             name.append(c)
             c = wrapped_stream.read(1)
         name = ''.join(name)
