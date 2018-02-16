@@ -105,8 +105,10 @@ if __name__ == '__main__':
     luigi.interface.setup_interface_logging()
 
     luigi.run(['CdxIndexAndVerify', '--local-scheduler', '--target-date', '2018-02-10'])
-    #task = CdxIndexAndVerify(target_date=datetime.datetime.strptime("2018-02-10","%Y-%m-%d"))
-    #task.run()
+
+    #very = CdxIndexAndVerify(target_date=datetime.datetime.strptime("2018-02-10","%Y-%m-%d"))
+    #cdx = CheckCdxIndex(input_file=very.input().path)
+    #cdx.run()
 
     #input = os.path.join(os.getcwd(),'test/input-list.txt')
     #luigi.run(['CheckCdxIndex', '--input-file', input, '--from-local', '--local-scheduler'])
