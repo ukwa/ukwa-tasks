@@ -198,16 +198,19 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         ANJ: Modified to use the warcio parser instead of splitting lines.
         """
         # Parse the start of the input stream, which is <filename>\t<filedata>
+        wrapped_stream = TellingReader(input_stream)
         c = ''
         name = []
         while c != '\t':
             name.append(c)
-            c = input_stream.read(1)
+            c = wrapped_stream.read(1)
         name = ''.join(name)
         logger.warning("Got file name '%s'..." % name)
         # Having consumed the 'key', read the payload:
         # Wrap the stream in a handy Reader:
-        wrapped_stream = TellingReader(input_stream)
+        #wrapped_stream = TellingReader(input_stream)
+        #wrapped_stream.read(len(name)+1)
+        wrapped_stream.pos = 0
         reader = warcio.ArchiveIterator(wrapped_stream)
         for record in reader:
             logger.warning("Got record: %s %s" % (record.rec_type, record.rec_type ))
