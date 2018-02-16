@@ -105,7 +105,7 @@ if __name__ == '__main__':
     luigi.interface.setup_interface_logging()
 
     #luigi.run(['CdxIndexAndVerify', '--local-scheduler', '--target-date', '2018-02-10'])
-    task = CdxIndexAndVerify(target_date="2018-02-10")
+    task = CdxIndexAndVerify(target_date=datetime.datetime.strptime("2018-02-10","%Y-%m-%d"))
     task.run()
 
     #input = os.path.join(os.getcwd(),'test/input-list.txt')
