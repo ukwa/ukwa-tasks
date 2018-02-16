@@ -193,7 +193,7 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         be passed as arguments to the mapper.
 
         If the input is coded output from a previous run,
-        the arguments will be splitted in key and value.
+        the arguments will be split in key and value.
 
         ANJ: Modified to use the warcio parser instead of splitting lines.
         """
@@ -213,8 +213,8 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         wrapped_stream.pos = 0
         reader = warcio.ArchiveIterator(wrapped_stream)
         for record in reader:
-            logger.warning("Got record: %s %s" % (record.rec_type, record.rec_type ))
-            logger.warning("Record: %s" % record.content_stream().read()[:128])
+            logger.warning("Got record: %s %s %i" % (record.rec_type, record.content_type, record.length ))
+            logger.warning("Record content: %s" % record.content_stream().read()[:128])
             if self.read_for_offset:
                 record.raw_offset = reader.get_record_offset()
                 record.raw_length = reader.get_record_length()
