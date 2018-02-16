@@ -149,7 +149,7 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
     from_local = luigi.BoolParameter(default=False)
     read_for_offset = luigi.BoolParameter(default=False)
 
-    kv_separator = '\0'
+    kv_separator = '\t'
 
     def __init__(self, **kwargs):
         super(HadoopWarcReaderJob, self).__init__(**kwargs)
