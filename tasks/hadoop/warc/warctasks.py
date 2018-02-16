@@ -164,7 +164,8 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
 
     def jobconfs(self):
         jcs = super(HadoopWarcReaderJob, self).jobconfs()
-        jcs.append('stream.map.input.field.separator=\\0')
+        jcs.append('stream.map.input.field.separator=\t')
+        jcs.append('stream.map.input.ignoreKey=true')
         return jcs
 
     def job_runner(self):
@@ -204,18 +205,18 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         """
         # Parse the start of the input stream, which is <filename>\t<filedata>
         wrapped_stream = TellingReader(input_stream)
-        c = ''
-        name = []
-        while c != '\0':
-            name.append(c)
-            c = wrapped_stream.read(1)
-        name = ''.join(name)
-        logger.warning("Got file name '%s'..." % name)
+        #c = ''
+        #name = []
+        #while c != '\t':
+        #    name.append(c)
+        #    c = wrapped_stream.read(1)
+        #name = ''.join(name)
+        #logger.warning("Got file name '%s'..." % name)
         # Having consumed the 'key', read the payload:
         # Wrap the stream in a handy Reader:
-        #wrapped_stream = TellingReader(input_stream)
-        #wrapped_stream.read(len(name)+1)
-        wrapped_stream.pos = 0
+        ##wrapped_stream = TellingReader(input_stream)
+        ##wrapped_stream.read(len(name)+1)
+        #wrapped_stream.pos = 0
         reader = warcio.ArchiveIterator(wrapped_stream)
         for record in reader:
             logger.warning("Got record: %s %s %i" % (record.rec_type, record.content_type, record.length ))
