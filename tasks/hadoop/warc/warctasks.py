@@ -167,7 +167,7 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
     def jobconfs(self):
         jcs = super(HadoopWarcReaderJob, self).jobconfs()
         jcs.append('stream.map.input.field.separator=%s' % self.kv_separator)
-        #jcs.append('stream.map.input.ignoreKey=true')
+        jcs.append('stream.map.input.ignoreKey=true')
         return jcs
 
     def job_runner(self):
@@ -218,16 +218,17 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         # Wrap the stream in a handy Reader:
         wrapped_stream = TellingReader(input_stream)
         # Parse the start of the input stream, which is <filename>\t<filedata>
-        name = self.read_key_from_stream(wrapped_stream)
-        # Having consumed the 'key', read the payload:
-        wrapped_stream.pos = 0
+        #name = self.read_key_from_stream(wrapped_stream)
+        ## Having consumed the 'key', read the payload:
+        #wrapped_stream.pos = 0
         reader = warcio.ArchiveIterator(wrapped_stream)
         for record in reader:
-            logger.warning("Got record: %s %s %i" % (record.rec_type, record.content_type, record.length ))
+            logger.warning("Got record type: %s %s %i" % (record.rec_type, record.content_type, record.length ))
             logger.warning("Got record format and headers: %s %s %s" % (record.format, record.rec_headers, record.http_headers ))
+            content = record.content_stream().read()
+            logger.warning("Record content: %s" % content[:128])
+            logger.warning("Record content as hex: %s" % binascii.hexlify(content[:128]))
             logger.warning("Got record offset + length: %i %i" % (reader.get_record_offset(), reader.get_record_length() ))
-            logger.warning("Record content: %s" % record.content_stream().read()[:128])
-            logger.warning("Record content as hex: %s" % binascii.hexlify(record.content_stream().read()[:128]))
             if self.read_for_offset:
                 record.raw_offset = reader.get_record_offset()
                 record.raw_length = reader.get_record_length()
