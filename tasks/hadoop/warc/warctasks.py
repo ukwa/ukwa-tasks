@@ -83,8 +83,9 @@ class ExternalFilesFromList(luigi.ExternalTask):
 # Special reader to read the input stream and yield WARC records:
 class TellingReader():
     def __init__(self, stream):
-        #self.stream = io.open(stream.fileno(), 'rb')
-        self.stream = stream
+        # Ensure open in binary mode:
+        self.stream = io.open(stream.fileno(), 'rb')
+        #self.stream = stream
         self.pos = 0
 
     def read(self, size=None):
@@ -196,17 +197,17 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
 
         ANJ: Modified to use the warcio parser instead of splitting lines.
         """
-        # Wrap the stream in a handy Reader:
-        wrapped_stream = TellingReader(input_stream)
         # Parse the start of the input stream, which is <filename>\t<filedata>
         c = ''
         name = []
         while c != '\t':
             name.append(c)
-            c = wrapped_stream.read(1)
+            c = input_stream.read(1)
         name = ''.join(name)
         logger.warning("Got file name '%s'..." % name)
         # Having consumed the 'key', read the payload:
+        # Wrap the stream in a handy Reader:
+        wrapped_stream = TellingReader(input_stream)
         reader = warcio.ArchiveIterator(wrapped_stream)
         for record in reader:
             logger.warning("Got record: %s %s" % (record.rec_type, record.rec_type ))
