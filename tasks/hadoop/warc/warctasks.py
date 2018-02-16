@@ -215,7 +215,7 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         for record in reader:
             logger.warning("Got record: %s %s %i" % (record.rec_type, record.content_type, record.length ))
             logger.warning("Got record format and headers: %s %s %s" % (record.format, record.rec_headers, record.http_headers ))
-            logger.warning("Got record offset + length: %i %i" % (record.get_record_offset(), record.get_record_length() ))
+            logger.warning("Got record offset + length: %i %i" % (reader.get_record_offset(), reader.get_record_length() ))
             logger.warning("Record content: %s" % record.content_stream().read()[:128])
             if self.read_for_offset:
                 record.raw_offset = reader.get_record_offset()
