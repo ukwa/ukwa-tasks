@@ -149,6 +149,8 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
     from_local = luigi.BoolParameter(default=False)
     read_for_offset = luigi.BoolParameter(default=False)
 
+    kv_separator = '\0'
+
     def __init__(self, **kwargs):
         super(HadoopWarcReaderJob, self).__init__(**kwargs)
 
@@ -164,8 +166,8 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
 
     def jobconfs(self):
         jcs = super(HadoopWarcReaderJob, self).jobconfs()
-        jcs.append('stream.map.input.field.separator=\t')
-        jcs.append('stream.map.input.ignoreKey=true')
+        jcs.append('stream.map.input.field.separator=%s' % self.kv_separator)
+        #jcs.append('stream.map.input.ignoreKey=true')
         return jcs
 
     def job_runner(self):
@@ -192,6 +194,16 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         else:
             self.internal_writer(outputs, stdout)
 
+    def read_key_from_stream(self, stream):
+        c = ''
+        name = []
+        while c != self.kv_separator:
+            name.append(c)
+            c = stream.read(1)
+        name = ''.join(name)
+        logger.warning("Got file name '%s'..." % name)
+        return name
+
     def _map_input(self, input_stream):
         """
         Iterate over input and call the mapper for each item.
@@ -203,26 +215,19 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
 
         ANJ: Modified to use the warcio parser instead of splitting lines.
         """
-        # Parse the start of the input stream, which is <filename>\t<filedata>
-        wrapped_stream = TellingReader(input_stream)
-        #c = ''
-        #name = []
-        #while c != '\t':
-        #    name.append(c)
-        #    c = wrapped_stream.read(1)
-        #name = ''.join(name)
-        #logger.warning("Got file name '%s'..." % name)
-        # Having consumed the 'key', read the payload:
         # Wrap the stream in a handy Reader:
-        ##wrapped_stream = TellingReader(input_stream)
-        ##wrapped_stream.read(len(name)+1)
-        #wrapped_stream.pos = 0
+        wrapped_stream = TellingReader(input_stream)
+        # Parse the start of the input stream, which is <filename>\t<filedata>
+        name = self.read_key_from_stream(wrapped_stream)
+        # Having consumed the 'key', read the payload:
+        wrapped_stream.pos = 0
         reader = warcio.ArchiveIterator(wrapped_stream)
         for record in reader:
             logger.warning("Got record: %s %s %i" % (record.rec_type, record.content_type, record.length ))
             logger.warning("Got record format and headers: %s %s %s" % (record.format, record.rec_headers, record.http_headers ))
             logger.warning("Got record offset + length: %i %i" % (reader.get_record_offset(), reader.get_record_length() ))
             logger.warning("Record content: %s" % record.content_stream().read()[:128])
+            logger.warning("Record content as hex: %s" % binascii.hexlify(record.content_stream().read()[:128]))
             if self.read_for_offset:
                 record.raw_offset = reader.get_record_offset()
                 record.raw_length = reader.get_record_length()
