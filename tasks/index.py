@@ -79,9 +79,10 @@ class CdxIndexer(luigi.contrib.hadoop_jar.HadoopJarJobTask):
 class CdxIndexAndVerify(luigi.Task):
     target_date = luigi.DateParameter(default=datetime.date.today() - datetime.timedelta(1))
     stream = luigi.Parameter(default='npld')
+    date = luigi.DateParameter(default=datetime.date.today())
 
     def requires(self):
-        return ListWarcsByDate(target_date=self.target_date, stream=self.stream, file_list_date=datetime.date.today())
+        return ListWarcsByDate(target_date=self.target_date, stream=self.stream, file_list_date=self.date)
 
     def output(self):
         target_date_string = self.target_date.strftime("%Y-%m-%d")
@@ -106,7 +107,10 @@ if __name__ == '__main__':
 
     #luigi.run(['CdxIndexAndVerify', '--local-scheduler', '--target-date', '2018-02-10'])
 
-    very = CdxIndexAndVerify(target_date=datetime.datetime.strptime("2018-02-10","%Y-%m-%d"))
+    very = CdxIndexAndVerify(
+        date=datetime.datetime.strptime("2018-02-16","%Y-%m-%d"),
+        target_date = datetime.datetime.strptime("2018-02-10", "%Y-%m-%d")
+    )
     cdx = CheckCdxIndex(input_file=very.input().path)
     cdx.run()
 
