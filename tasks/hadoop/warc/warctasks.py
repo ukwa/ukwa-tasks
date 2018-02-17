@@ -102,7 +102,7 @@ class TellingReader():
     def readline(self, size=None):
         #logger.warning("readline()ing from current position: %i" % self.pos)
         line = self.stream.readline(size)
-        #logger.warning("readline() %s" % line)
+        logger.warning("readline() %s" % line)
         self.pos += len(bytes(line))
         #logger.warning("readline()ing current position now: %i" % self.pos)
         return line
