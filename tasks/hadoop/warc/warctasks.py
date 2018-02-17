@@ -222,6 +222,7 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         ## Having consumed the 'key', read the payload:
         #wrapped_stream.pos = 0
         reader = warcio.ArchiveIterator(wrapped_stream)
+        logger.warning("Reader types: %s %s" % (reader.reader.decompressor, reader.reader.decomp_type))
         for record in reader:
             logger.warning("Got record type: %s %s %i" % (record.rec_type, record.content_type, record.length ))
             logger.warning("Got record format and headers: %s %s %s" % (record.format, record.rec_headers, record.http_headers ))
