@@ -104,12 +104,13 @@ class CheckCdxIndex(HadoopWarcReaderJob):
         if key == "MISS":
             count = 0
             for value in values:
+                logger.warning("%s %s" % (key, value))
                 yield key, value
                 count += 1
-            logger.warning("MISSES", count)
+            logger.warning("MISSES %i" % count)
             yield "MISSES", count
         else:
-            logger.warning(key, sum(values))
+            logger.warning("%s %i" % (key, sum(values)))
             yield key, sum(values)
 
 
