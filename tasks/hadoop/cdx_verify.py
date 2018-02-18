@@ -30,7 +30,7 @@ class CheckCdxIndex(HadoopWarcReaderJob):
     sampling_rate = luigi.IntParameter(default=100)
     cdx_server = luigi.Parameter(default="http://bigcdx:8080/data-heritrix")
 
-    n_reduce_tasks = 10
+    n_reduce_tasks = 1
 
     first = True
 
@@ -106,8 +106,10 @@ class CheckCdxIndex(HadoopWarcReaderJob):
             for value in values:
                 yield key, value
                 count += 1
+            logger.warning("MISSES", count)
             yield "MISSES", count
         else:
+            logger.warning(key, sum(values))
             yield key, sum(values)
 
 
