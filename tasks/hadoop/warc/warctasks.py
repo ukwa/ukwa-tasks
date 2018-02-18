@@ -73,10 +73,10 @@ class ExternalFilesFromList(luigi.ExternalTask):
             line = line.strip()
             if line:
                 if self.from_local:
-                    logger.debug("Yielding local target: %s" % line)
+                    #logger.debug("Yielding local target: %s" % line)
                     yield luigi.LocalTarget(path=line)
                 else:
-                    logger.debug("Yielding HDFS target: %s" % line)
+                    #logger.debug("Yielding HDFS target: %s" % line)
                     yield luigi.contrib.hdfs.HdfsTarget(line, format=luigi.contrib.hdfs.format.PlainFormat)
 
 
@@ -91,8 +91,8 @@ class TellingReader():
     def read(self, size=None):
         #logger.warning("read()ing from current position: %i, size=%s" % (self.pos, size))
         chunk = self.stream.read(size)
-        if len(bytes(chunk)) == 0:
-            logger.warning("read() 0 bytes, current position: %i" % self.pos)
+        #if len(bytes(chunk)) == 0:
+        #    logger.warning("read() 0 bytes, current position: %i" % self.pos)
         #else:
         #    logger.warning("read() %s" % binascii.hexlify(chunk[:64]))
         self.pos += len(bytes(chunk))
@@ -102,7 +102,7 @@ class TellingReader():
     def readline(self, size=None):
         #logger.warning("readline()ing from current position: %i" % self.pos)
         line = self.stream.readline(size)
-        logger.warning("readline() %s" % line)
+        #logger.warning("readline() %s" % line)
         self.pos += len(bytes(line))
         #logger.warning("readline()ing current position now: %i" % self.pos)
         return line
@@ -201,7 +201,7 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
             name.append(c)
             c = stream.read(1)
         name = ''.join(name)
-        logger.warning("Got file name '%s'..." % name)
+        #logger.warning("Got file name '%s'..." % name)
         return name
 
     def _map_input(self, input_stream):
@@ -222,14 +222,14 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         ## Having consumed the 'key', read the payload:
         #wrapped_stream.pos = 0
         reader = warcio.ArchiveIterator(wrapped_stream)
-        logger.warning("Reader types: %s %s" % (reader.reader.decompressor, reader.reader.decomp_type))
+        #logger.warning("Reader types: %s %s" % (reader.reader.decompressor, reader.reader.decomp_type))
         for record in reader:
-            logger.warning("Got record type: %s %s %i" % (record.rec_type, record.content_type, record.length ))
-            logger.warning("Got record format and headers: %s %s %s" % (record.format, record.rec_headers, record.http_headers ))
-            content = record.content_stream().read()
-            logger.warning("Record content: %s" % content[:128])
-            logger.warning("Record content as hex: %s" % binascii.hexlify(content[:128]))
-            logger.warning("Got record offset + length: %i %i" % (reader.get_record_offset(), reader.get_record_length() ))
+            #logger.warning("Got record type: %s %s %i" % (record.rec_type, record.content_type, record.length ))
+            #logger.warning("Got record format and headers: %s %s %s" % (record.format, record.rec_headers, record.http_headers ))
+            #content = record.content_stream().read()
+            #logger.warning("Record content: %s" % content[:128])
+            #logger.warning("Record content as hex: %s" % binascii.hexlify(content[:128]))
+            #logger.warning("Got record offset + length: %i %i" % (reader.get_record_offset(), reader.get_record_length() ))
             if self.read_for_offset:
                 record.raw_offset = reader.get_record_offset()
                 record.raw_length = reader.get_record_length()

@@ -54,7 +54,7 @@ class CheckCdxIndex(HadoopWarcReaderJob):
         # Extract the URI and status code:
         record_url = record.rec_headers.get_header('WARC-Target-URI')
         timestamp = record.rec_headers.get_header('WARC-Date')
-        logger.warning("Found a record: %s @ %s" % (record_url, timestamp))
+        #logger.warning("Found a record: %s @ %s" % (record_url, timestamp))
 
         # Only look at valid response records:
         if record.rec_type == 'response' and record.content_type.startswith(b'application/http'):
@@ -62,8 +62,8 @@ class CheckCdxIndex(HadoopWarcReaderJob):
             timestamp = re.sub('[^0-9]','', timestamp)
             # Check a random subset of the records, always emitting the first record:
             if self.first or random.randint(1, self.sampling_rate) == 1:
-                logger.warn("Checking a record: %s" % record_url)
-                capture_dates = [] #self.get_capture_dates(record_url)
+                #logger.warn("Checking a record: %s" % record_url)
+                capture_dates = self.get_capture_dates(record_url)
                 if timestamp in capture_dates:
                     yield "HITS", 1
                 else:
