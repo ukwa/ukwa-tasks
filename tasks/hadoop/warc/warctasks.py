@@ -138,6 +138,9 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
 
     As this uses the stream directly and so data-locality is preserved (at least for the first chunk).
 
+    WARNING: Not production ready! Using hadoop streaming to push in the whole WARC requires reading the whole
+    thing into RAM first, in order to submit it as a single key-value pair. This is slow and brittle in terms of RAM.
+
     Parameters:
         input_file: The path for the file that contains the list of WARC files to process
         from_local: Whether the paths refer to files on HDFS or local files

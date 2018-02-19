@@ -343,7 +343,7 @@ class ListWarcFileSets(luigi.Task):
     """
     Lists the WARCS and arranges them by date:
     """
-    date = luigi.DateParameter(default=datetime.date(2018,02,12))
+    date = luigi.DateParameter(default=datetime.date.today())
     stream = luigi.Parameter(default='npld')
 
     def requires(self):
@@ -444,7 +444,7 @@ class ListByCrawl(luigi.Task):
     """
     Loads in the crawl files and arranges them by crawl.
     """
-    date = luigi.DateParameter(default=datetime.date(2018,02,12))
+    date = luigi.DateParameter(default=datetime.date.today())
     stream = luigi.Parameter(default='npld')
 
     def requires(self):
@@ -566,7 +566,7 @@ class PrintSomeLines(luigi.Task):
     """
     An example to try to get things working:
     """
-    date = luigi.DateParameter(default=datetime.date(2018,02,12))
+    date = luigi.DateParameter(default=datetime.date.today())
 
     def requires(self):
         return ListAllFilesOnHDFSToLocalFile(self.date)
