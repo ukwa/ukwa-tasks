@@ -259,4 +259,8 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
             logger.warning("Processing LINE: %s" % input_line)
             logger.warning("Processing split LINE: %s" % input_line.split("\t"))
             logger.warning("USING: %s" % self.deserialize)
+            # Skip lines with errors in, arising from
+            # https://github.com/webrecorder/warcio/blob/ed7ebfd7c518bb6ff7e43bfc5d76285ea6eeb8b0/warcio/bufferedreaders.py#L143
+            if input_line.startswith('Error -3 while decompressing'):
+                continue
             yield list(map(self.deserialize, input_line.split("\t")))
