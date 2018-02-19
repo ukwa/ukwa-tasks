@@ -245,3 +245,11 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         """ Override this call to implement your own ArcWarcRecord-reading mapper. """
         yield None, record
 
+    def internal_reader(self, input_stream):
+        """
+        Reader which uses python eval on each part of a tab separated string.
+        Yields a tuple of python objects.
+        """
+        for input_line in input_stream:
+            logger.warning("Processing LINE: %s" % input_line)
+            yield list(map(self.deserialize, input_line.split("\t")))
