@@ -88,7 +88,7 @@ class CheckCdxIndex(HadoopWarcReaderJob):
                 capture_dates.append(de.firstChild.nodeValue)
             f.close()
         except ExpatError, e:
-            logger.info("Exception on lookup: "  + str(e))
+            logger.warning("Exception on lookup: "  + str(e))
 
         return capture_dates
 
@@ -100,7 +100,6 @@ class CheckCdxIndex(HadoopWarcReaderJob):
         :param values:
         :return:
         """
-
         if key == "MISS":
             count = 0
             for value in values:
@@ -110,7 +109,8 @@ class CheckCdxIndex(HadoopWarcReaderJob):
             logger.warning("MISSES %i" % count)
             yield "MISSES", count
         else:
-            logger.warning("REDUCER KEY %s" % key)
+            logger.warning("REDUCER KEY: %s" % key)
+            logger.warning("REDUCER VALUES: %s" % values)
             count = sum(values)
             logger.warning("%s %i" % (key, count))
             yield key, count
