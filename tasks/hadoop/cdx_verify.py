@@ -110,8 +110,10 @@ class CheckCdxIndex(HadoopWarcReaderJob):
             yield "MISSES", count
         else:
             logger.warning("REDUCER KEY: %s" % key)
-            logger.warning("REDUCER VALUES: %s" % values)
-            count = sum(values)
+            count = 0
+            for value in values:
+                logger.warning("REDUCER VALUE: %s" % value)
+                count += value
             logger.warning("%s %i" % (key, count))
             yield key, count
 
