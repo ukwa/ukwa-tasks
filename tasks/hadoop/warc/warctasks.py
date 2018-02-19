@@ -221,20 +221,25 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         name = self.read_key_from_stream(wrapped_stream)
         # Having consumed the 'key', read the payload:
         wrapped_stream.pos = 0
-        reader = warcio.ArchiveIterator(wrapped_stream)
-        #logger.warning("Reader types: %s %s" % (reader.reader.decompressor, reader.reader.decomp_type))
-        for record in reader:
-            #logger.warning("Got record type: %s %s %i" % (record.rec_type, record.content_type, record.length ))
-            #logger.warning("Got record format and headers: %s %s %s" % (record.format, record.rec_headers, record.http_headers ))
-            #content = record.content_stream().read()
-            #logger.warning("Record content: %s" % content[:128])
-            #logger.warning("Record content as hex: %s" % binascii.hexlify(content[:128]))
-            #logger.warning("Got record offset + length: %i %i" % (reader.get_record_offset(), reader.get_record_length() ))
-            if self.read_for_offset:
-                record.raw_offset = reader.get_record_offset()
-                record.raw_length = reader.get_record_length()
-            for output in self.mapper(record):
-                yield output
+        try:
+            reader = warcio.ArchiveIterator(wrapped_stream)
+            #logger.warning("Reader types: %s %s" % (reader.reader.decompressor, reader.reader.decomp_type))
+            for record in reader:
+                #logger.warning("Got record type: %s %s %i" % (record.rec_type, record.content_type, record.length ))
+                #logger.warning("Got record format and headers: %s %s %s" % (record.format, record.rec_headers, record.http_headers ))
+                #content = record.content_stream().read()
+                #logger.warning("Record content: %s" % content[:128])
+                #logger.warning("Record content as hex: %s" % binascii.hexlify(content[:128]))
+                #logger.warning("Got record offset + length: %i %i" % (reader.get_record_offset(), reader.get_record_length() ))
+                if self.read_for_offset:
+                    record.raw_offset = reader.get_record_offset()
+                    record.raw_length = reader.get_record_length()
+                for output in self.mapper(record):
+                    yield output
+        except Exception as e:
+            logger.error("Exception while processing WARC file!")
+            logger.exception("ArchiveIterator threw...", e)
+
         if self.final_mapper != NotImplemented:
             for output in self.final_mapper():
                 yield output
@@ -243,7 +248,7 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
     def mapper(self, record):
         # type: (ArcWarcRecord) -> [(str, str)]
         """ Override this call to implement your own ArcWarcRecord-reading mapper. """
-        yield None, record
+        yield record.rec_type, 1
 
     def internal_reader(self, input_stream):
         """
