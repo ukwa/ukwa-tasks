@@ -252,4 +252,6 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         """
         for input_line in input_stream:
             logger.warning("Processing LINE: %s" % input_line)
+            logger.warning("Processing split LINE: %s" % input_line.split("\t"))
+            logger.warning("USING: %s" % self.deserialize)
             yield list(map(self.deserialize, input_line.split("\t")))
