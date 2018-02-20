@@ -36,7 +36,17 @@ class ListAllFilesOnHDFSToLocalFile(luigi.Task):
     total_under_replicated = -1
 
     def output(self):
-        return state_file(self.date,'hdfs','all-files-list.csv', on_hdfs=False)
+        return self.state_file(None)
+
+    def state_file(self, state_date):
+        return state_file(state_date,'hdfs','all-files-list.csv', on_hdfs=False)
+
+    def complete(self):
+        # Check the dated file exists
+        exists = self.state_file(self.date).exists()
+        if not exists:
+            return False
+        return True
 
     def run(self):
         command = luigi.contrib.hdfs.load_hadoop_cmd()
@@ -78,6 +88,14 @@ class ListAllFilesOnHDFSToLocalFile(luigi.Task):
                     else:
                         self.total_directories += 1
 
+            # At this point, a temporary file has been written - now we need to check we are okay to move it into place
+            if os.path.exists(self.output().path):
+                os.rename(self.output().path, "%s.old" % self.output().path)
+
+        # Record a dated flag file to show the work is done.
+        with self.state_file(self.date).open('w') as fout:
+            fout.write(json.dumps(self.get_stats()))
+
     def get_stats(self):
         return {'dirs' : self.total_directories, 'files': self.total_files, 'bytes' : self.total_bytes,
                 'under-replicated' : self.total_under_replicated}
@@ -107,7 +125,7 @@ class ListAllFilesOnHDFSToLocalFile(luigi.Task):
         g.labels(service=hdfs_service).set(self.total_under_replicated)
 
 
-class ListAllFilesPutOnHDFS(luigi.Task):
+class CopyFileListToHDFS(luigi.Task):
     """
     This puts a copy of the file list onto HDFS
     """
@@ -562,7 +580,7 @@ class GenerateHDFSSummaries(luigi.WrapperTask):
     task_namespace = "hdfs"
 
     def requires(self):
-        return [ ListAllFilesPutOnHDFS(), ListUKWAWebArchiveFiles(), ListDuplicateWebArchiveFiles(), ListEmptyFiles(),
+        return [ CopyFileListToHDFS(), ListUKWAWebArchiveFiles(), ListDuplicateWebArchiveFiles(), ListEmptyFiles(),
                  ListByCrawl() ]
 
 
