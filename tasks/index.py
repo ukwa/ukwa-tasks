@@ -104,7 +104,7 @@ class CheckCdxIndex(luigi.Task):
         with open(str(self.input_file)) as flist:
             for line in flist:
                 hdfs_file = luigi.contrib.hdfs.HdfsTarget(path=line)
-                logger.warning("Opening " + hdfs_file)
+                logger.warning("Opening " + hdfs_file.path)
                 with hdfs_file.open('r') as fin:
                     reader = warcio.ArchiveIterator(TellingReader(fin))
                     logger.info("Reader decompression types: %s" % reader.reader.decomp_type)
