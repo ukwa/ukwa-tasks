@@ -23,8 +23,7 @@ class ListAllFilesOnHDFSToLocalFile(luigi.Task):
     This task lists all files on HDFS (skipping directories).
 
     As this can be a very large list, it avoids reading it all into memory. It
-    parses each line, and creates a JSON item for each, outputting the result in
-    [JSON Lines format](http://jsonlines.org/).
+    parses each line, and creates a CSV line for each.
 
     It set up to run once a day, as input to downstream reporting or analysis processes.
     """
@@ -37,11 +36,7 @@ class ListAllFilesOnHDFSToLocalFile(luigi.Task):
     total_under_replicated = -1
 
     def output(self):
-        return state_file(self.date,'hdfs','all-files-list.jsonl', on_hdfs=False)
-
-    def get_stats(self):
-        return {'dirs' : self.total_directories, 'files': self.total_files, 'bytes' : self.total_bytes,
-                'under-replicated' : self.total_under_replicated}
+        return state_file(self.date,'hdfs','all-files-list.csv', on_hdfs=False)
 
     def run(self):
         command = luigi.contrib.hdfs.load_hadoop_cmd()
@@ -51,6 +46,10 @@ class ListAllFilesOnHDFSToLocalFile(luigi.Task):
         self.total_bytes = 0
         self.total_under_replicated = 0
         with self.output().open('w') as fout:
+            # Set up output file:
+            writer = csv.DictWriter(fout, fieldnames=csv_fieldnames)
+            writer.writeheader()
+            # Set up listing process
             process = subprocess.Popen(command, stdout=subprocess.PIPE)
             for line in iter(process.stdout.readline, ''):
                 if "lsr: DEPRECATED: Please use 'ls -R' instead." in line:
@@ -74,9 +73,14 @@ class ListAllFilesOnHDFSToLocalFile(luigi.Task):
                         self.total_bytes += int(filesize)
                         if number_of_replicas < 3:
                             self.total_under_replicated += 1
-                        fout.write(json.dumps(info)+'\n')
+                        # Write out as CSV:
+                        writer.writerow(info)
                     else:
                         self.total_directories += 1
+
+    def get_stats(self):
+        return {'dirs' : self.total_directories, 'files': self.total_files, 'bytes' : self.total_bytes,
+                'under-replicated' : self.total_under_replicated}
 
     def get_metrics(self,registry):
         # type: (CollectorRegistry) -> None
@@ -114,7 +118,7 @@ class ListAllFilesPutOnHDFS(luigi.Task):
         return ListAllFilesOnHDFSToLocalFile(self.date)
 
     def output(self):
-        return state_file(self.date,'hdfs','all-files-list.jsonl.gz', on_hdfs=True, use_gzip=True)
+        return state_file(self.date,'hdfs','all-files-list.csv', on_hdfs=True)
 
     def run(self):
         # Read the file in and write it to HDFS
@@ -135,15 +139,19 @@ class ListEmptyFiles(luigi.Task):
         return ListAllFilesOnHDFSToLocalFile(self.date)
 
     def output(self):
-        return state_file(self.date, 'hdfs', 'empty-files-list.jsonl')
+        return state_file(self.date, 'hdfs', 'empty-files-list.csv')
 
     def run(self):
-        with self.output().open('w') as f:
-            for line in self.input().open('r'):
-                item = json.loads(line.strip())
-                # Archive file names:
-                if not item['permissions'].startswith('d') and item['filesize'] == "0":
-                    f.write(json.dumps(item) + '\n')
+        with self.output().open('w') as fout:
+            # Set up output file:
+            writer = csv.DictWriter(fout, fieldnames=csv_fieldnames)
+            writer.writeheader()
+            with self.input().open('r') as fin:
+                reader = csv.DictReader(fin, fieldnames=csv_fieldnames)
+                for item in reader:
+                    # Archive file names:
+                    if not item['permissions'].startswith('d') and item['filesize'] == "0":
+                        writer.writerow(item)
 
 
 class ListUKWAFiles(luigi.Task):
@@ -163,12 +171,13 @@ class ListUKWAFiles(luigi.Task):
         with self.output().open('w') as f:
             writer = csv.DictWriter(f, fieldnames=csv_fieldnames)
             writer.writeheader()
-            for line in self.input().open('r'):
-                item = json.loads(line.strip())
-                item['filename'] = item['filename'].strip()
-                # Archive file names:
-                if item['filename'].startswith('/data/') or item['filename'].startswith('/heritrix/'):
-                    writer.writerow(item)
+            with self.input().open('r') as fin:
+                reader = csv.DictReader(fin, fieldnames=csv_fieldnames)
+                for item in reader:
+                    item['filename'] = item['filename'].strip()
+                    # Archive file names:
+                    if item['filename'].startswith('/data/') or item['filename'].startswith('/heritrix/'):
+                        writer.writerow(item)
 
 
 class ListWebArchiveFiles(luigi.Task):
@@ -188,13 +197,14 @@ class ListWebArchiveFiles(luigi.Task):
         with self.output().open('w') as f:
             writer = csv.DictWriter(f, fieldnames=csv_fieldnames)
             writer.writeheader()
-            for line in self.input().open('r'):
-                item = json.loads(line.strip())
-                item['filename'] = item['filename'].strip()
-                # Archive file names:
-                if item['filename'].endswith('.warc.gz') or item['filename'].endswith('.arc.gz') \
-                        or item['filename'].endswith('.warc') or item['filename'].endswith('.arc'):
-                    writer.writerow(item)
+            with self.input().open('r') as fin:
+                reader = csv.DictReader(fin, fieldnames=csv_fieldnames)
+                for item in reader:
+                    item['filename'] = item['filename'].strip()
+                    # Archive file names:
+                    if item['filename'].endswith('.warc.gz') or item['filename'].endswith('.arc.gz') \
+                            or item['filename'].endswith('.warc') or item['filename'].endswith('.arc'):
+                        writer.writerow(item)
 
 
 class ListUKWAWebArchiveFiles(luigi.Task):
@@ -566,13 +576,14 @@ class PrintSomeLines(luigi.Task):
         return ListAllFilesOnHDFSToLocalFile(self.date)
 
     def output(self):
-        return state_file(self.date, 'hdfs', 'empty-files-list.jsonl')
+        return state_file(self.date, 'hdfs', 'empty-files-list.csv')
 
     def run(self):
-        for line in self.input().open('r'):
-            item = json.loads(line.strip())
-            print(item)
-            break
+        with self.input().open('r') as fin:
+            reader = csv.DictReader(fin, fieldnames=csv_fieldnames)
+            for item in reader:
+                print(item)
+                break
 
 
 

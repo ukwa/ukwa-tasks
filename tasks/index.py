@@ -5,7 +5,6 @@ import luigi
 import luigi.contrib.hdfs
 import luigi.contrib.hadoop_jar
 from tasks.hdfs.listings import ListWarcsByDate
-from tasks.hadoop.cdx_verify import CheckCdxIndex
 from tasks.common import state_file, report_file
 
 logger = logging.getLogger('luigi-interface')
@@ -97,6 +96,9 @@ class CdxIndexAndVerify(luigi.Task):
         yield verify_task
         # If it worked, record it here.
         pass
+
+class CheckCdxIndex(luigi.Task):
+    input_file = luigi.Parameter()
 
 
 if __name__ == '__main__':
