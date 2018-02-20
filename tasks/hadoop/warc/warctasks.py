@@ -204,7 +204,7 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
             name.append(c)
             c = stream.read(1)
         name = ''.join(name)
-        #logger.warning("Got file name '%s'..." % name)
+        logger.warning("Got file name '%s'..." % name)
         return name
 
     def _map_input(self, input_stream):
@@ -226,10 +226,10 @@ class HadoopWarcReaderJob(luigi.contrib.hadoop.JobTask):
         wrapped_stream.pos = 0
         try:
             reader = warcio.ArchiveIterator(wrapped_stream)
-            #logger.warning("Reader types: %s %s" % (reader.reader.decompressor, reader.reader.decomp_type))
+            logger.warning("Reader types: %s %s" % (reader.reader.decompressor, reader.reader.decomp_type))
             for record in reader:
-                #logger.warning("Got record type: %s %s %i" % (record.rec_type, record.content_type, record.length ))
-                #logger.warning("Got record format and headers: %s %s %s" % (record.format, record.rec_headers, record.http_headers ))
+                logger.warning("Got record type: %s %s %i" % (record.rec_type, record.content_type, record.length ))
+                logger.warning("Got record format and headers: %s %s %s" % (record.format, record.rec_headers, record.http_headers ))
                 #content = record.content_stream().read()
                 #logger.warning("Record content: %s" % content[:128])
                 #logger.warning("Record content as hex: %s" % binascii.hexlify(content[:128]))
