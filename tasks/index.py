@@ -103,7 +103,7 @@ class CheckCdxIndex(luigi.Task):
         # For each input file, open it up and get some URLs and timestamps.
         with open(str(self.input_file)) as flist:
             for line in flist:
-                hdfs_file = luigi.contrib.hdfs.HdfsTarget(path=line, format=luigi.contrib.hdfs.PlainFormat)
+                hdfs_file = luigi.contrib.hdfs.HdfsTarget(path=line.strip())
                 logger.warning("Opening " + hdfs_file.path)
                 with hdfs_file.open('r') as fin:
                     reader = warcio.ArchiveIterator(TellingReader(fin))
