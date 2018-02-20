@@ -413,7 +413,7 @@ class ListWarcsByDate(luigi.Task):
     """
     target_date = luigi.DateParameter(default=datetime.date.today() - datetime.timedelta(1))
     stream = luigi.Parameter(default='npld')
-    date = luigi.DateParameter(default=datetime.date(2018,02,12))
+    date = luigi.DateParameter(default=datetime.date.today())
 
     def requires(self):
         # Get todays list:
