@@ -91,7 +91,7 @@ class CheckCdxIndex(luigi.Task):
     task_namespace = "index"
 
     def output(self):
-        return state_file(self.target_date, 'cdx', 'checked-warc-files.txt')
+        return state_file(None, 'cdx', 'checked-warc-files.txt')
 
     def run(self):
         # For each input file, open it up and get some URLs and timestamps.
