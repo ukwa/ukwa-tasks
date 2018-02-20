@@ -88,7 +88,7 @@ class CdxIndexer(luigi.contrib.hadoop_jar.HadoopJarJobTask):
 
 class CheckCdxIndex(luigi.Task):
     input_file = luigi.Parameter()
-    sampling_rate = luigi.IntParameter(default=100)
+    sampling_rate = luigi.IntParameter(default=500)
     cdx_server = luigi.Parameter(default='http://bigcdx:8080/data-heritrix')
     task_namespace = "index"
 
@@ -122,7 +122,7 @@ class CheckCdxIndex(luigi.Task):
                                 # Timestamp, stripped down to Wayback form:
                                 timestamp = record.rec_headers.get_header('WARC-Date')
                                 timestamp = re.sub('[^0-9]', '', timestamp)
-                                logger.info("Found a record: %s @ %s" % (record_url, timestamp))
+                                #logger.info("Found a record: %s @ %s" % (record_url, timestamp))
                                 # Check a random subset of the records, always emitting the first record:
                                 if self.count == 0 or random.randint(1, self.sampling_rate) == 1:
                                     logger.info("Checking a record: %s" % record_url)
