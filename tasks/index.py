@@ -106,32 +106,35 @@ class CheckCdxIndex(luigi.Task):
                 hdfs_file = luigi.contrib.hdfs.HdfsTarget(path=line.strip())
                 logger.info("Opening " + hdfs_file.path)
                 with hdfs_file.open('r') as fin:
-                    reader = warcio.ArchiveIterator(TellingReader(fin))
-                    for record in reader:
-                        logger.warning("Got record format and headers: %s %s %s" % (
-                        record.format, record.rec_headers, record.http_headers))
-                        # content = record.content_stream().read()
-                        # logger.warning("Record content: %s" % content[:128])
-                        # logger.warning("Record content as hex: %s" % binascii.hexlify(content[:128]))
-                        logger.warning("Got record offset + length: %i %i" % (reader.get_record_offset(), reader.get_record_length() ))
+                    try:
+                        reader = warcio.ArchiveIterator(TellingReader(fin))
+                        for record in reader:
+                            logger.warning("Got record format and headers: %s %s %s" % (
+                            record.format, record.rec_headers, record.http_headers))
+                            # content = record.content_stream().read()
+                            # logger.warning("Record content: %s" % content[:128])
+                            # logger.warning("Record content as hex: %s" % binascii.hexlify(content[:128]))
+                            logger.warning("Got record offset + length: %i %i" % (reader.get_record_offset(), reader.get_record_length() ))
 
-                        # Only look at valid response records:
-                        if record.rec_type == 'response' and record.content_type.startswith(b'application/http'):
-                            record_url = record.rec_headers.get_header('WARC-Target-URI')
-                            # Timestamp, stripped down to Wayback form:
-                            timestamp = record.rec_headers.get_header('WARC-Date')
-                            timestamp = re.sub('[^0-9]', '', timestamp)
-                            logger.info("Found a record: %s @ %s" % (record_url, timestamp))
-                            # Check a random subset of the records, always emitting the first record:
-                            if self.count == 0 or random.randint(1, self.sampling_rate) == 1:
-                                logger.info("Checking a record: %s" % record_url)
-                                capture_dates = self.get_capture_dates(record_url)
-                                if timestamp in capture_dates:
-                                    self.hits += 1
-                                # Keep track of checked records:
-                                self.tries += 1
-                            # Keep track of total records:
-                            self.count += 1
+                            # Only look at valid response records:
+                            if record.rec_type == 'response' and record.content_type.startswith(b'application/http'):
+                                record_url = record.rec_headers.get_header('WARC-Target-URI')
+                                # Timestamp, stripped down to Wayback form:
+                                timestamp = record.rec_headers.get_header('WARC-Date')
+                                timestamp = re.sub('[^0-9]', '', timestamp)
+                                logger.info("Found a record: %s @ %s" % (record_url, timestamp))
+                                # Check a random subset of the records, always emitting the first record:
+                                if self.count == 0 or random.randint(1, self.sampling_rate) == 1:
+                                    logger.info("Checking a record: %s" % record_url)
+                                    capture_dates = self.get_capture_dates(record_url)
+                                    if timestamp in capture_dates:
+                                        self.hits += 1
+                                    # Keep track of checked records:
+                                    self.tries += 1
+                                # Keep track of total records:
+                                self.count += 1
+                    except Exception as e:
+                        logger.exception("OH DEAR",e)
             print(self.hits, self.tries, self.count)
 
     def get_capture_dates(self, url):
