@@ -13,6 +13,7 @@ import luigi
 import luigi.contrib.hdfs
 import luigi.contrib.hadoop_jar
 from tasks.hdfs.listings import ListWarcsByDate
+from tasks.hadoop.warc.warctasks import TellingReader
 from tasks.common import state_file, report_file
 
 logger = logging.getLogger('luigi-interface')
@@ -99,7 +100,7 @@ class CheckCdxIndex(luigi.Task):
             for line in flist:
                 hdfs_file = luigi.contrib.hdfs.HdfsTarget(path=line)
                 with hdfs_file.open() as fin:
-                    reader = warcio.ArchiveIterator(fin)
+                    reader = warcio.ArchiveIterator(TellingReader(fin))
                     logger.info("Reader types: %s %s" % (reader.reader.decompressor, reader.reader.decomp_type))
                     for record in reader:
 
