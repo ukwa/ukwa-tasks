@@ -105,17 +105,18 @@ class CheckCdxIndex(luigi.Task):
             for line in flist:
                 hdfs_file = luigi.contrib.hdfs.HdfsTarget(path=line.strip())
                 logger.info("Opening " + hdfs_file.path)
-                with TellingReader(hdfs_file.open('r')) as fin:
-                    reader = warcio.ArchiveIterator(fin)
+                with hdfs_file.open('r') as fin:
+                    reader = warcio.ArchiveIterator(TellingReader(fin))
                     for record in reader:
                         record_url = record.rec_headers.get_header('WARC-Target-URI')
+                        # Timestamp, stripped down to Wayback form:
                         timestamp = record.rec_headers.get_header('WARC-Date')
+                        timestamp = re.sub('[^0-9]', '', timestamp)
+                        
                         logger.info("Found a record: %s @ %s" % (record_url, timestamp))
 
                         # Only look at valid response records:
                         if record.rec_type == 'response' and record.content_type.startswith(b'application/http'):
-                            # Strip down to Wayback form:
-                            timestamp = re.sub('[^0-9]', '', timestamp)
                             # Check a random subset of the records, always emitting the first record:
                             if self.count == 0 or random.randint(1, self.sampling_rate) == 1:
                                 logger.info("Checking a record: %s" % record_url)
