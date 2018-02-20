@@ -375,7 +375,7 @@ class ListWarcFileSets(luigi.Task):
     #    return False
 
     def output(self):
-        return state_file(self.date, 'hdfs', 'warc-filesets.txt')
+        return state_file(self.date, 'warc', 'warc-filesets.txt')
 
     def run(self):
         # Go through the data and assemble the resources for each crawl:
@@ -413,15 +413,14 @@ class ListWarcsByDate(luigi.Task):
     """
     target_date = luigi.DateParameter(default=datetime.date.today() - datetime.timedelta(1))
     stream = luigi.Parameter(default='npld')
-    file_list_date = luigi.DateParameter(default=datetime.date(2018,02,12))
+    date = luigi.DateParameter(default=datetime.date(2018,02,12))
 
     def requires(self):
         # Get todays list:
-        return ListUKWAFilesByCollection(self.file_list_date, self.stream)
+        return ListUKWAFilesByCollection(self.date, self.stream)
 
     def output(self):
-        target_date_string = self.target_date.strftime("%Y-%m-%d")
-        return state_file(self.file_list_date, 'warcs', 'warc-files-for-%s.txt'% target_date_string )
+        return state_file(self.target_date, 'warcs', 'warc-files-for-date.txt' )
 
     def complete(self):
         # Override complete so we can catch if the list has changed.

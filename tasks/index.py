@@ -1,6 +1,14 @@
 import os
+import re
 import logging
 import datetime
+import xml.dom.minidom
+from xml.parsers.expat import ExpatError
+import random
+import warcio
+import urllib
+from urllib import quote_plus  # python 2
+# from urllib.parse import quote_plus # python 3
 import luigi
 import luigi.contrib.hdfs
 import luigi.contrib.hadoop_jar
@@ -40,10 +48,12 @@ class CopyToHDFS(luigi.Task):
 
 class CdxIndexer(luigi.contrib.hadoop_jar.HadoopJarJobTask):
     input_file = luigi.Parameter()
+    cdx_server = luigi.Parameter(default='http://bigcdx:8080/data-heritrix')
+
+    meta_flag = ''
+    task_namespace = 'index'
+
     num_reducers = 50
-    cdx_server = "http://bigcdx:8080/data-heritrix"
-    meta_flag = ""
-    task_namespace = "index"
 
     def output(self):
         out_name = os.path.join("warcs2cdx", "%s-submitted.txt" % os.path.splitext(os.path.basename(self.input_file))[0])
@@ -75,17 +85,69 @@ class CdxIndexer(luigi.contrib.hadoop_jar.HadoopJarJobTask):
         ]
 
 
+class CheckCdxIndex(luigi.Task):
+    input_file = luigi.Parameter()
+    cdx_server = luigi.Parameter(default='http://bigcdx:8080/data-heritrix')
+    task_namespace = "index"
+
+    def output(self):
+        return state_file(self.target_date, 'cdx', 'checked-warc-files.txt')
+
+    def run(self):
+        # For each input file, open it up and get some URLs and timestamps.
+        with open(str(self.input_file)) as flist:
+            for line in flist:
+                with open(line) as fin:
+                    reader = warcio.ArchiveIterator(fin)
+                    logger.info("Reader types: %s %s" % (reader.reader.decompressor, reader.reader.decomp_type))
+                    for record in reader:
+
+                        record_url = record.rec_headers.get_header('WARC-Target-URI')
+                        timestamp = record.rec_headers.get_header('WARC-Date')
+                        logger.info("Found a record: %s @ %s" % (record_url, timestamp))
+
+                        # Only look at valid response records:
+                        if record.rec_type == 'response' and record.content_type.startswith(b'application/http'):
+                            # Strip down to Wayback form:
+                            timestamp = re.sub('[^0-9]', '', timestamp)
+                            # Check a random subset of the records, always emitting the first record:
+                            if self.count == 0 or random.randint(1, self.sampling_rate) == 1:
+                                logger.info("Checking a record: %s" % record_url)
+                                capture_dates = self.get_capture_dates(record_url)
+                                if timestamp in capture_dates:
+                                    self.hits += 1
+                                # Keep track of checked records:
+                                self.tries += 1
+                            # Keep track of total records:
+                            self.count += 1
+
+    def get_capture_dates(self, url):
+        # Get the hits for this URL:
+        q = "type:urlquery url:" + quote_plus(url)
+        cdx_query_url = "%s?q=%s" % (self.cdx_server, quote_plus(q))
+        capture_dates = []
+        try:
+            proxies = { 'http': 'http://explorer:3127'}
+            f = urllib.urlopen(cdx_query_url, proxies=proxies)
+            dom = xml.dom.minidom.parseString(f.read())
+            for de in dom.getElementsByTagName('capturedate'):
+                capture_dates.append(de.firstChild.nodeValue)
+            f.close()
+        except ExpatError, e:
+            logger.warning("Exception on lookup: "  + str(e))
+
+        return capture_dates
+
+
 class CdxIndexAndVerify(luigi.Task):
     target_date = luigi.DateParameter(default=datetime.date.today() - datetime.timedelta(1))
     stream = luigi.Parameter(default='npld')
-    date = luigi.DateParameter(default=datetime.date.today())
 
     def requires(self):
-        return ListWarcsByDate(target_date=self.target_date, stream=self.stream, file_list_date=self.date)
+        return ListWarcsByDate(target_date=self.target_date, stream=self.stream)
 
     def output(self):
-        target_date_string = self.target_date.strftime("%Y-%m-%d")
-        return state_file(self.target_date, 'cdx', 'indexed-warc-files-for-%s.txt' % target_date_string)
+        return state_file(self.target_date, 'cdx', 'indexed-warc-files.txt')
 
     def run(self):
         # First, yield a Hadoop job to run the indexer:
@@ -96,9 +158,6 @@ class CdxIndexAndVerify(luigi.Task):
         yield verify_task
         # If it worked, record it here.
         pass
-
-class CheckCdxIndex(luigi.Task):
-    input_file = luigi.Parameter()
 
 
 if __name__ == '__main__':
