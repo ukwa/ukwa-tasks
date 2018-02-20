@@ -104,13 +104,14 @@ class CheckCdxIndex(luigi.Task):
         with open(str(self.input_file)) as flist:
             for line in flist:
                 hdfs_file = luigi.contrib.hdfs.HdfsTarget(path=line)
-                with hdfs_file.open() as fin:
+                logger.warning("Opening " + hdfs_file)
+                with hdfs_file.open('r') as fin:
                     reader = warcio.ArchiveIterator(TellingReader(fin))
                     logger.info("Reader decompression types: %s" % reader.reader.decomp_type)
                     for record in reader:
                         record_url = record.rec_headers.get_header('WARC-Target-URI')
                         timestamp = record.rec_headers.get_header('WARC-Date')
-                        logger.info("Found a record: %s @ %s" % (record_url, timestamp))
+                        logger.warning("Found a record: %s @ %s" % (record_url, timestamp))
 
                         # Only look at valid response records:
                         if record.rec_type == 'response' and record.content_type.startswith(b'application/http'):
@@ -126,6 +127,7 @@ class CheckCdxIndex(luigi.Task):
                                 self.tries += 1
                             # Keep track of total records:
                             self.count += 1
+                    print("HELLO")
 
     def get_capture_dates(self, url):
         # Get the hits for this URL:
