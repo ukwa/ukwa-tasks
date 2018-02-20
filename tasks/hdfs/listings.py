@@ -36,7 +36,7 @@ class ListAllFilesOnHDFSToLocalFile(luigi.Task):
     total_under_replicated = -1
 
     def output(self):
-        return self.state_file(None)
+        return self.state_file('current')
 
     def state_file(self, state_date):
         return state_file(state_date,'hdfs','all-files-list.csv', on_hdfs=False)

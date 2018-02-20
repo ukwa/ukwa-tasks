@@ -25,13 +25,23 @@ def state_file(date, tag, suffix, on_hdfs=False, use_gzip=False, use_webhdfs=Fal
         state_folder = HDFS_STATE_FOLDER
 
     # build the full path:
-    if date:
-        full_path = pather.join( str(state_folder),
-                         date.strftime("%Y-%m"),
-                         tag,
-                         '%s-%s' % (date.strftime("%Y-%m-%d"), suffix))
+    if date is None:
+        full_path = pather.join(
+            str(state_folder),
+            tag,
+            suffix)
+    elif isinstance(date, str):
+        full_path = pather.join(
+            str(state_folder),
+            tag,
+            date,
+            suffix)
     else:
-        full_path = pather.join( str(state_folder), tag, suffix)
+        full_path = pather.join(
+            str(state_folder),
+            tag,
+            date.strftime("%Y-%m"),
+            '%s-%s' % (date.strftime("%Y-%m-%d"), suffix))
 
     if on_hdfs:
         if use_webhdfs:
