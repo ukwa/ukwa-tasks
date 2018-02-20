@@ -134,7 +134,7 @@ class CheckCdxIndex(luigi.Task):
                                 # Keep track of total records:
                                 self.count += 1
                     except Exception as e:
-                        logger.exception("OH DEAR",e)
+                        logger.exception("OH DEAR")
             print(self.hits, self.tries, self.count)
 
     def get_capture_dates(self, url):
