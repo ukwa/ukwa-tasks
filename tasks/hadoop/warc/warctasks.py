@@ -83,8 +83,6 @@ class ExternalFilesFromList(luigi.ExternalTask):
 # Special reader to read the input stream and yield WARC records:
 class TellingReader():
     def __init__(self, stream):
-        # Ensure open in binary mode:
-        #self.stream = io.open(stream.fileno(), 'rb')
         self.stream = stream
         self.pos = 0
 
