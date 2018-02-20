@@ -1,6 +1,7 @@
 from tasks.hadoop.warc.warctasks import HadoopWarcReaderJob
 import os
 import re
+import sys
 import random
 import logging
 import luigi
@@ -32,7 +33,9 @@ class CheckCdxIndex(HadoopWarcReaderJob):
 
     n_reduce_tasks = 1
 
-    first = True
+    count = 0
+    tries = 0
+    hits = 0
 
     def __init__(self, **kwargs):
         """Ensure arguments are set up correctly."""
@@ -61,19 +64,28 @@ class CheckCdxIndex(HadoopWarcReaderJob):
             # Strip down to Wayback form:
             timestamp = re.sub('[^0-9]','', timestamp)
             # Check a random subset of the records, always emitting the first record:
-            if self.first or random.randint(1, self.sampling_rate) == 1:
+            if self.count == 0 or random.randint(1, self.sampling_rate) == 1:
                 #logger.warn("Checking a record: %s" % record_url)
                 capture_dates = self.get_capture_dates(record_url)
                 if timestamp in capture_dates:
+                    self.hits += 1
                     yield "HITS", 1
                 else:
                     yield "MISS", record_url
-                # Flag that the first record has been emitted:
-                self.first = False
                 # Keep track of checked records:
+                self.tries += 1
                 yield "SAMPLE_SIZE", 1
             # Keep track of total records:
+            self.count += 1
             yield "TOTAL", 1
+
+        # Occasionally report status:
+        # (see https://hadoop.apache.org/docs/r1.2.1/streaming.html#How+do+I+update+counters+in+streaming+applications%3F)
+        if self.count % 100 == 0:
+            sys.stderr.write("reporter:counter:CDX,TRIES,%i\n" % self.tries)
+            sys.stderr.write("reporter:counter:CDX,HITS,%i\n" % self.hits)
+            sys.stderr.write("reporter:counter:CDX,TOTAL,%i\n" % self.count)
+            sys.stderr.write("reporter:status:CDX %i/%i checks performed.\n" % (self.tries, self.count))
 
     def get_capture_dates(self, url):
         # Get the hits for this URL:

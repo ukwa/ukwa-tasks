@@ -105,13 +105,7 @@ class ListAllFilesOnHDFSToLocalFile(luigi.Task):
 
 class ListAllFilesPutOnHDFS(luigi.Task):
     """
-    This task lists all files on HDFS (skipping directories).
-
-    As this can be a very large list, it avoids reading it all into memory. It
-    parses each line, and creates a JSON item for each, outputting the result in
-    [JSON Lines format](http://jsonlines.org/).
-
-    It set up to run once a day, as input to downstream reporting or analysis processes.
+    This puts a copy of the file list onto HDFS
     """
     date = luigi.DateParameter(default=datetime.date.today())
     task_namespace = "hdfs"

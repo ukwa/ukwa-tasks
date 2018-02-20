@@ -6,6 +6,7 @@ This module summarises the tasks that are to be run daily.
 
 import luigi
 from tasks.hdfs.listings import GenerateHDFSSummaries
+from tasks.backup.postgresql import BackupProductionW3ACTPostgres
 
 
 class DailyIngestTasks(luigi.WrapperTask):
@@ -13,7 +14,8 @@ class DailyIngestTasks(luigi.WrapperTask):
     Daily ingest tasks, should generally be a few hours ahead of the access-side tasks (below):
     """
     def requires(self):
-        return [GenerateHDFSSummaries()]
+        return [BackupProductionW3ACTPostgres(),
+                GenerateHDFSSummaries()]
 
 
 if __name__ == '__main__':

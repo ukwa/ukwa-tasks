@@ -16,7 +16,7 @@ HDFS_STATE_FOLDER = os.environ.get('HDFS_STATE_FOLDER','/9_processing/task-state
 logger = logging.getLogger('luigi-interface')
 
 
-def state_file(date, tag, suffix, on_hdfs=False, use_gzip=False, use_webhdfs=True):
+def state_file(date, tag, suffix, on_hdfs=False, use_gzip=False, use_webhdfs=False):
     # Set up the state folder:
     state_folder = LOCAL_STATE_FOLDER
     pather = os.path
