@@ -88,8 +88,13 @@ class CdxIndexer(luigi.contrib.hadoop_jar.HadoopJarJobTask):
 
 class CheckCdxIndex(luigi.Task):
     input_file = luigi.Parameter()
+    sampling_rate = luigi.IntParameter(default=100)
     cdx_server = luigi.Parameter(default='http://bigcdx:8080/data-heritrix')
     task_namespace = "index"
+
+    count = 0
+    tries = 0
+    hits = 0
 
     def output(self):
         return state_file(None, 'cdx', 'checked-warc-files.txt')
@@ -101,9 +106,8 @@ class CheckCdxIndex(luigi.Task):
                 hdfs_file = luigi.contrib.hdfs.HdfsTarget(path=line)
                 with hdfs_file.open() as fin:
                     reader = warcio.ArchiveIterator(TellingReader(fin))
-                    logger.info("Reader types: %s %s" % (reader.reader.decompressor, reader.reader.decomp_type))
+                    logger.info("Reader decompression types: %s" % reader.reader.decomp_type)
                     for record in reader:
-
                         record_url = record.rec_headers.get_header('WARC-Target-URI')
                         timestamp = record.rec_headers.get_header('WARC-Date')
                         logger.info("Found a record: %s @ %s" % (record_url, timestamp))
