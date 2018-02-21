@@ -36,7 +36,7 @@ def state_file(date, tag, suffix, on_hdfs=False, use_gzip=False, use_webhdfs=Fal
             str(state_folder),
             tag,
             date,
-            "%s-%s" % (tag,suffix))
+            "%s-%s-%s" % (date,tag,suffix))
     else:
         full_path = pather.join(
             str(state_folder),

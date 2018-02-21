@@ -425,11 +425,11 @@ class ListWarcsByDate(luigi.Task):
         return state_file(self.target_date, 'warcs', '%s-warc-files-for-date.txt' % self.file_count )
 
     def complete(self):
-        # Override complete so we can catch if the list has changed.
-        if not self.output().exists():
+        # Override complete so we can catch if the list has changed - i.e. always re-generate the list:
+        if self.file_count == 0:
             return False
         else:
-            return True
+            return self.output().exists()
 
     def generate_day_list(self):
         # Go through the data and find the WARCs for each day:
