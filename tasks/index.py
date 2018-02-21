@@ -105,37 +105,40 @@ class CheckCdxIndexForWARC(CopyToTableInDB):
     def rows(self):
         hdfs_file = luigi.contrib.hdfs.HdfsTarget(path=self.input_file)
         logger.info("Opening " + hdfs_file.path)
-        with hdfs_file.open('r') as fin:
-            reader = warcio.ArchiveIterator(TellingReader(fin))
-            for record in reader:
-                #logger.warning("Got record format and headers: %s %s %s" % (
-                #record.format, record.rec_headers, record.http_headers))
-                # content = record.content_stream().read()
-                # logger.warning("Record content: %s" % content[:128])
-                # logger.warning("Record content as hex: %s" % binascii.hexlify(content[:128]))
-                #logger.warning("Got record offset + length: %i %i" % (reader.get_record_offset(), reader.get_record_length() ))
+        fin = hdfs_file.open('r')
+        reader = warcio.ArchiveIterator(TellingReader(fin))
+        for record in reader:
+            #logger.warning("Got record format and headers: %s %s %s" % (
+            #record.format, record.rec_headers, record.http_headers))
+            # content = record.content_stream().read()
+            # logger.warning("Record content: %s" % content[:128])
+            # logger.warning("Record content as hex: %s" % binascii.hexlify(content[:128]))
+            #logger.warning("Got record offset + length: %i %i" % (reader.get_record_offset(), reader.get_record_length() ))
 
-                # Only look at valid response records:
-                if record.rec_type == 'response' and record.content_type.startswith(b'application/http'):
-                    record_url = record.rec_headers.get_header('WARC-Target-URI')
-                    # Timestamp, stripped down to Wayback form:
-                    timestamp = record.rec_headers.get_header('WARC-Date')
-                    timestamp = re.sub('[^0-9]', '', timestamp)
-                    #logger.info("Found a record: %s @ %s" % (record_url, timestamp))
-                    # Check a random subset of the records, always emitting the first record:
-                    if self.count == 0 or random.randint(1, self.sampling_rate) == 1:
-                        logger.info("Checking a record: %s @ %s" % (record_url, timestamp))
-                        print(self.hits, self.tries, self.count)
-                        capture_dates = self.get_capture_dates(record_url)
-                        if timestamp in capture_dates:
-                            self.hits += 1
-                        # Keep track of checked records:
-                        self.tries += 1
-                        # If we've tried enough records, exit:
-                        if self.tries >= self.max_records_to_check:
-                            break
-                    # Keep track of total records:
-                    self.count += 1
+            # Only look at valid response records:
+            if record.rec_type == 'response' and record.content_type.startswith(b'application/http'):
+                record_url = record.rec_headers.get_header('WARC-Target-URI')
+                # Timestamp, stripped down to Wayback form:
+                timestamp = record.rec_headers.get_header('WARC-Date')
+                timestamp = re.sub('[^0-9]', '', timestamp)
+                #logger.info("Found a record: %s @ %s" % (record_url, timestamp))
+                # Check a random subset of the records, always emitting the first record:
+                if self.count == 0 or random.randint(1, self.sampling_rate) == 1:
+                    logger.info("Checking a record: %s @ %s" % (record_url, timestamp))
+                    print(self.hits, self.tries, self.count)
+                    capture_dates = self.get_capture_dates(record_url)
+                    if timestamp in capture_dates:
+                        self.hits += 1
+                    # Keep track of checked records:
+                    self.tries += 1
+                    # If we've tried enough records, exit:
+                    if self.tries >= self.max_records_to_check:
+                        break
+                # Keep track of total records:
+                self.count += 1
+
+            # Close the input stream and catch any exception due to closing it early:
+            fin._abort()
 
             yield self.input_file, self.tries, self.hits
 
