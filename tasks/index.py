@@ -164,7 +164,7 @@ class CheckCdxIndexForWARC(CopyToTableInDB):
         return capture_dates
 
 
-class CheckCdxIndex(luigi.Task):
+class CheckCdxIndex(luigi.WrapperTask):
     input_file = luigi.Parameter()
     sampling_rate = luigi.IntParameter(default=500)
     cdx_server = luigi.Parameter(default='http://bigcdx:8080/data-heritrix')
@@ -192,8 +192,7 @@ class CdxIndexAndVerify(luigi.Task):
         return ListWarcsByDate(target_date=self.target_date, stream=self.stream)
 
     def output(self):
-        return taskdb_target("warc_set_indexed_and_verified","%s OK" % self.target_date)
-
+        return taskdb_target("warc_set_indexed_and_verified","%s OK" % self.input().path)
 
     def run(self):
         # First, yield a Hadoop job to run the indexer:
