@@ -3,6 +3,7 @@ import logging
 import posixpath
 import luigi.contrib.hdfs
 import luigi.contrib.webhdfs
+from luigi.contrib.postgres import PostgresTarget, CopyToTable
 from tasks.hdfs.webhdfs import WebHdfsPlainFormat
 from prometheus_client import CollectorRegistry, push_to_gateway
 from metrics import record_task_outcome
@@ -65,6 +66,33 @@ def report_file(date, tag, suffix):
         full_path = pather.join( str(report_folder), tag, suffix)
 
     return luigi.LocalTarget(path=full_path)
+
+
+# --------------------------------------------------------------------------
+# These helpers help set up database targets for fine-grained task outputs
+# --------------------------------------------------------------------------
+
+def taskdb_target(task_group, task_result):
+    # Set the task group and ID:
+    target = PostgresTarget(
+            host='access',
+            database='access_task_state',
+            user='access',
+            password='access',
+            table=task_group,
+            update_id=task_result
+        )
+    # Set the actual DB table to use:
+    target.marker_table = "ingest_task_state"
+
+    return target
+
+
+class CopyToTableInDB(CopyToTable):
+    host = 'access'
+    database = 'access_task_state'
+    user = 'access'
+    password = 'access'
 
 
 # --------------------------------------------------------------------------

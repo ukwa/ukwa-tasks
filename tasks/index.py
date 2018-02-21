@@ -14,7 +14,7 @@ import luigi.contrib.hdfs
 import luigi.contrib.hadoop_jar
 from tasks.hdfs.listings import ListWarcsByDate
 from tasks.hadoop.warc.warctasks import TellingReader
-from tasks.common import state_file, report_file
+from tasks.common import state_file, report_file, CopyToTableInDB
 
 logger = logging.getLogger('luigi-interface')
 
@@ -86,58 +86,58 @@ class CdxIndexer(luigi.contrib.hadoop_jar.HadoopJarJobTask):
         ]
 
 
-class CheckCdxIndex(luigi.Task):
+class CheckCdxIndexForWARC(CopyToTableInDB):
     input_file = luigi.Parameter()
     sampling_rate = luigi.IntParameter(default=500)
     cdx_server = luigi.Parameter(default='http://bigcdx:8080/data-heritrix')
+    max_records_to_check = luigi.IntParameter(default=10)
     task_namespace = "index"
+
+    table = 'index_result_table'
+    columns = (('warc_path', 'text'),
+               ('records_checked', 'int'),
+               ('records_found', 'float'))
 
     count = 0
     tries = 0
     hits = 0
 
-    def output(self):
-        return state_file(None, 'cdx', 'checked-warc-files.txt')
+    def rows(self):
+        hdfs_file = luigi.contrib.hdfs.HdfsTarget(path=self.input_file)
+        logger.info("Opening " + hdfs_file.path)
+        with hdfs_file.open('r') as fin:
+            reader = warcio.ArchiveIterator(TellingReader(fin))
+            for record in reader:
+                #logger.warning("Got record format and headers: %s %s %s" % (
+                #record.format, record.rec_headers, record.http_headers))
+                # content = record.content_stream().read()
+                # logger.warning("Record content: %s" % content[:128])
+                # logger.warning("Record content as hex: %s" % binascii.hexlify(content[:128]))
+                #logger.warning("Got record offset + length: %i %i" % (reader.get_record_offset(), reader.get_record_length() ))
 
-    def run(self):
-        # For each input file, open it up and get some URLs and timestamps.
-        with open(str(self.input_file)) as flist:
-            for line in flist:
-                hdfs_file = luigi.contrib.hdfs.HdfsTarget(path=line.strip())
-                logger.info("Opening " + hdfs_file.path)
-                with hdfs_file.open('r') as fin:
-                    try:
-                        reader = warcio.ArchiveIterator(TellingReader(fin))
-                        for record in reader:
-                            #logger.warning("Got record format and headers: %s %s %s" % (
-                            #record.format, record.rec_headers, record.http_headers))
-                            # content = record.content_stream().read()
-                            # logger.warning("Record content: %s" % content[:128])
-                            # logger.warning("Record content as hex: %s" % binascii.hexlify(content[:128]))
-                            #logger.warning("Got record offset + length: %i %i" % (reader.get_record_offset(), reader.get_record_length() ))
+                # Only look at valid response records:
+                if record.rec_type == 'response' and record.content_type.startswith(b'application/http'):
+                    record_url = record.rec_headers.get_header('WARC-Target-URI')
+                    # Timestamp, stripped down to Wayback form:
+                    timestamp = record.rec_headers.get_header('WARC-Date')
+                    timestamp = re.sub('[^0-9]', '', timestamp)
+                    #logger.info("Found a record: %s @ %s" % (record_url, timestamp))
+                    # Check a random subset of the records, always emitting the first record:
+                    if self.count == 0 or random.randint(1, self.sampling_rate) == 1:
+                        logger.info("Checking a record: %s @ %s" % (record_url, timestamp))
+                        print(self.hits, self.tries, self.count)
+                        capture_dates = self.get_capture_dates(record_url)
+                        if timestamp in capture_dates:
+                            self.hits += 1
+                        # Keep track of checked records:
+                        self.tries += 1
+                        # If we've tried enough records, exit:
+                        if self.tries >= self.max_records_to_check:
+                            break
+                    # Keep track of total records:
+                    self.count += 1
 
-                            # Only look at valid response records:
-                            if record.rec_type == 'response' and record.content_type.startswith(b'application/http'):
-                                record_url = record.rec_headers.get_header('WARC-Target-URI')
-                                # Timestamp, stripped down to Wayback form:
-                                timestamp = record.rec_headers.get_header('WARC-Date')
-                                timestamp = re.sub('[^0-9]', '', timestamp)
-                                #logger.info("Found a record: %s @ %s" % (record_url, timestamp))
-                                # Check a random subset of the records, always emitting the first record:
-                                if self.count == 0 or random.randint(1, self.sampling_rate) == 1:
-                                    logger.info("Checking a record: %s" % record_url)
-                                    print(self.hits, self.tries, self.count)
-                                    capture_dates = self.get_capture_dates(record_url)
-                                    if timestamp in capture_dates:
-                                        self.hits += 1
-                                    # Keep track of checked records:
-                                    self.tries += 1
-                                # Keep track of total records:
-                                self.count += 1
-                    except Exception as e:
-                        logger.exception("Exception while reading %s" % hdfs_file.path)
-
-            print(self.hits, self.tries, self.count)
+            yield self.input_file, self.tries, self.hits
 
     def get_capture_dates(self, url):
         # Get the hits for this URL:
@@ -155,6 +155,23 @@ class CheckCdxIndex(luigi.Task):
             logger.warning("Exception on lookup: "  + str(e))
 
         return capture_dates
+
+
+class CheckCdxIndex(luigi.Task):
+    input_file = luigi.Parameter()
+    sampling_rate = luigi.IntParameter(default=500)
+    cdx_server = luigi.Parameter(default='http://bigcdx:8080/data-heritrix')
+    task_namespace = "index"
+
+    def requires(self):
+        # For each input file, open it up and get some URLs and timestamps.
+        with open(str(self.input_file)) as flist:
+            for line in flist:
+                yield CheckCdxIndexForWARC(line.strip())
+
+    def run(self):
+        for input in self.input():
+            print(input)
 
 
 class CdxIndexAndVerify(luigi.Task):
