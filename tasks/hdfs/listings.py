@@ -43,7 +43,9 @@ class ListAllFilesOnHDFSToLocalFile(luigi.Task):
 
     def complete(self):
         # Check the dated file exists
-        exists = self.state_file(self.date).exists()
+        dated_target = self.state_file(self.date)
+        logger.info("Checking %s exists..." % dated_target.path)
+        exists = dated_target.exists()
         if not exists:
             return False
         return True
