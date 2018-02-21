@@ -41,9 +41,12 @@ class ListAllFilesOnHDFSToLocalFile(luigi.Task):
     def state_file(self, state_date, ext='csv'):
         return state_file(state_date,'hdfs','all-files-list.%s' % ext, on_hdfs=False)
 
+    def dated_state_file(self):
+        return self.state_file(self.date, ext='json')
+
     def complete(self):
         # Check the dated file exists
-        dated_target = self.state_file(self.date)
+        dated_target = self.dated_state_file()
         logger.info("Checking %s exists..." % dated_target.path)
         exists = dated_target.exists()
         if not exists:
@@ -95,7 +98,7 @@ class ListAllFilesOnHDFSToLocalFile(luigi.Task):
                 os.rename(self.output().path, "%s.old" % self.output().path)
 
         # Record a dated flag file to show the work is done.
-        with self.state_file(self.date, ext='json').open('w') as fout:
+        with self.dated_state_file().open('w') as fout:
             fout.write(json.dumps(self.get_stats()))
 
     def get_stats(self):
