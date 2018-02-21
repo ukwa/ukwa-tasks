@@ -129,6 +129,8 @@ class CheckCdxIndexForWARC(CopyToTableInDB):
                     capture_dates = self.get_capture_dates(record_url)
                     if timestamp in capture_dates:
                         self.hits += 1
+                    else:
+                        logger.warning("Record not found in index: %s @ %s" % (record_url, timestamp))
                     # Keep track of checked records:
                     self.tries += 1
                     # If we've tried enough records, exit:
