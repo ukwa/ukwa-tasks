@@ -192,6 +192,7 @@ class CdxIndexAndVerify(luigi.Task):
         return ListWarcsByDate(target_date=self.target_date, stream=self.stream)
 
     def output(self):
+        logger.info("Checking is complete: %s" % self.input().path)
         return taskdb_target("warc_set_indexed_and_verified","%s OK" % self.input().path)
 
     def run(self):
