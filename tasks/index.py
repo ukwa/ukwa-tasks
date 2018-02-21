@@ -14,7 +14,7 @@ import luigi.contrib.hdfs
 import luigi.contrib.hadoop_jar
 from tasks.hdfs.listings import ListWarcsByDate
 from tasks.hadoop.warc.warctasks import TellingReader
-from tasks.common import state_file, report_file, CopyToTableInDB
+from tasks.common import state_file, report_file, CopyToTableInDB, taskdb_target
 
 logger = logging.getLogger('luigi-interface')
 
@@ -140,7 +140,10 @@ class CheckCdxIndexForWARC(CopyToTableInDB):
         # Close the input stream and catch any exception due to closing it early:
         fin._abort()
 
-        yield self.input_file, self.tries, self.hits
+        if self.hits == self.tries:
+            yield self.input_file, self.tries, self.hits
+        else:
+            raise Exception("For %s, only %i of %i records checked are in the CDX index!"%(self.input_file, self.hits, self.tries))
 
     def get_capture_dates(self, url):
         # Get the hits for this URL:
@@ -172,9 +175,12 @@ class CheckCdxIndex(luigi.Task):
             for line in flist:
                 yield CheckCdxIndexForWARC(line.strip())
 
+    def output(self):
+        return taskdb_target("warc_set_verified","%s INDEXED OK" % self.input_file)
+
     def run(self):
-        for input in self.input():
-            print(input)
+        # If all the requirements are there, the whole set must be fine.
+        self.output().touch()
 
 
 class CdxIndexAndVerify(luigi.Task):
@@ -185,17 +191,19 @@ class CdxIndexAndVerify(luigi.Task):
         return ListWarcsByDate(target_date=self.target_date, stream=self.stream)
 
     def output(self):
-        return state_file(self.target_date, 'cdx', 'indexed-warc-files.txt')
+        return taskdb_target("warc_set_indexed_and_verified","%s OK" % self.input_file)
+
 
     def run(self):
         # First, yield a Hadoop job to run the indexer:
-        #index_task = CdxIndexer(self.input().path)
-        #yield index_task
+        index_task = CdxIndexer(self.input().path)
+        yield index_task
         # Then yield another job to check it worked:
         verify_task = CheckCdxIndex(input_file=self.input().path)
         yield verify_task
         # If it worked, record it here.
-        pass
+        if verify_task.complete():
+            self.output().touch()
 
 
 if __name__ == '__main__':

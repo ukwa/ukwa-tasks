@@ -89,10 +89,20 @@ def taskdb_target(task_group, task_result):
 
 
 class CopyToTableInDB(CopyToTable):
+    """
+    Abstract class that fixes which tables are used
+    """
     host = 'access'
     database = 'access_task_state'
     user = 'access'
     password = 'access'
+
+    def output(self):
+        """
+        Returns a PostgresTarget representing the inserted dataset.
+        """
+        return taskdb_target(self.table,self.update_id)
+
 
 
 # --------------------------------------------------------------------------
