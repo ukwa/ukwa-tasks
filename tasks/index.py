@@ -125,7 +125,6 @@ class CheckCdxIndexForWARC(CopyToTableInDB):
                 # Check a random subset of the records, always emitting the first record:
                 if self.count == 0 or random.randint(1, self.sampling_rate) == 1:
                     logger.info("Checking a record: %s @ %s" % (record_url, timestamp))
-                    print(self.hits, self.tries, self.count)
                     capture_dates = self.get_capture_dates(record_url)
                     if timestamp in capture_dates:
                         self.hits += 1
@@ -149,7 +148,7 @@ class CheckCdxIndexForWARC(CopyToTableInDB):
 
     def get_capture_dates(self, url):
         # Get the hits for this URL:
-        q = "type:urlquery url:" + quote_plus(url)
+        q = "type:urlquery url:" + quote_plus(url) + " limit:100000"
         cdx_query_url = "%s?q=%s" % (self.cdx_server, quote_plus(q))
         capture_dates = []
         try:
