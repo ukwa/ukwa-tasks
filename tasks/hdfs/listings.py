@@ -415,12 +415,14 @@ class ListWarcsByDate(luigi.Task):
     stream = luigi.Parameter(default='npld')
     date = luigi.DateParameter(default=datetime.date.today())
 
+    file_count = None
+
     def requires(self):
         # Get todays list:
         return ListUKWAFilesByCollection(self.date, self.stream)
 
     def output(self):
-        return state_file(self.target_date, 'warcs', 'warc-files-for-date.txt' )
+        return state_file(self.target_date, 'warcs', '%s-warc-files-for-date.txt' % self.file_count )
 
     def complete(self):
         # Override complete so we can catch if the list has changed.
@@ -456,6 +458,7 @@ class ListWarcsByDate(luigi.Task):
     def run(self):
         # Emit the list of output files as the task output:
         filenames = self.generate_day_list()
+        self.file_count = len(filenames)
         with self.output().open('w') as f:
             for output_path in filenames:
                 f.write('%s\n' % output_path)
