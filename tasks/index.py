@@ -137,10 +137,10 @@ class CheckCdxIndexForWARC(CopyToTableInDB):
                 # Keep track of total records:
                 self.count += 1
 
-            # Close the input stream and catch any exception due to closing it early:
-            fin._abort()
+        # Close the input stream and catch any exception due to closing it early:
+        fin._abort()
 
-            yield self.input_file, self.tries, self.hits
+        yield self.input_file, self.tries, self.hits
 
     def get_capture_dates(self, url):
         # Get the hits for this URL:
