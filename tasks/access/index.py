@@ -148,7 +148,7 @@ class CheckCdxIndexForWARC(CopyToTableInDB):
 
     def get_capture_dates(self, url):
         # Get the hits for this URL:
-        q = "type:urlquery url:" + quote_plus(url) + " limit:100000"
+        q = "type:urlquery url:" + quote_plus(url) + " limit:1000000"
         cdx_query_url = "%s?q=%s" % (self.cdx_server, quote_plus(q))
         capture_dates = []
         try:

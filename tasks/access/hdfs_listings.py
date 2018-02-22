@@ -49,6 +49,7 @@ class DownloadHDFSFileList(luigi.Task):
         dated_target = self.dated_state_file()
         logger.info("Checking %s exists..." % dated_target.path)
         exists = dated_target.exists()
+        logger.info("Got %s exists = %s..." % (dated_target.path, exists))
         if not exists:
             return False
         return True
