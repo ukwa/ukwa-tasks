@@ -58,12 +58,16 @@ class DownloadHDFSFileList(luigi.Task):
         with self.dated_state_file().temporary_path() as temp_output_path:
 
             # Download the file to the dated, compressed file (at a temporary path):
+            logger.info("Downloading %s" % self.dated_state_file().path)
             with self.input().open('r') as f_in, open(temp_output_path, 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
+            logger.info("Downloaded %s" % self.dated_state_file().path)
 
             # Also make an uncompressed version:
+            logger.info("Decompressing %s" % self.dated_state_file().path)
             with gzip.open(temp_output_path, 'rb') as f_in, self.output().open('w') as f_out:
                 shutil.copyfileobj(f_in, f_out)
+            logger.info("Decompressed %s" % self.dated_state_file().path)
 
 
 class ListWarcFileSets(luigi.Task):
