@@ -39,10 +39,10 @@ class DownloadHDFSFileList(luigi.Task):
         return CurrentHDFSFileList(self.date)
 
     def output(self):
-        return state_file(None,'hdfs','all-files-list.csv', on_hdfs=False)
+        return state_file(None,'access-hdfs','all-files-list.csv', on_hdfs=False)
 
     def dated_state_file(self):
-        return state_file(self.date,'hdfs','all-files-list.csv.gz', on_hdfs=False)
+        return state_file(self.date,'access-hdfs','all-files-list.csv.gz', on_hdfs=False)
 
     def complete(self):
         # Check the dated file exists
@@ -58,11 +58,11 @@ class DownloadHDFSFileList(luigi.Task):
         with self.output().temporary_path() as temp_output_path:
 
             # Download the file to the dated, compressed file (at a temporary path):
-            with self.input().open('rb') as f_in, open(temp_output_path, 'wb') as f_out:
+            with self.input().open('r') as f_in, open(temp_output_path, 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
 
             # Also make an uncompressed version:
-            with gzip.open(temp_output_path, 'rb') as f_in, self.output().open('wb') as f_out:
+            with gzip.open(temp_output_path, 'rb') as f_in, self.output().open('w') as f_out:
                 shutil.copyfileobj(f_in, f_out)
 
 
