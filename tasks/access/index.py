@@ -12,7 +12,7 @@ from urllib import quote_plus  # python 2
 import luigi
 import luigi.contrib.hdfs
 import luigi.contrib.hadoop_jar
-from tasks.access.hdfs import ListWarcsByDate
+from tasks.access.hdfs_listings import ListWarcsByDate
 from tasks.hadoop.warc.warctasks import TellingReader
 from tasks.common import state_file, report_file, CopyToTableInDB, taskdb_target
 
