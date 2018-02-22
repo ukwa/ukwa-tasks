@@ -55,7 +55,7 @@ class DownloadHDFSFileList(luigi.Task):
 
     def run(self):
         # Use Luigi's helper to ensure the dated file only appears when all is well:
-        with self.output().temporary_path() as temp_output_path:
+        with self.dated_state_file().temporary_path() as temp_output_path:
 
             # Download the file to the dated, compressed file (at a temporary path):
             with self.input().open('r') as f_in, open(temp_output_path, 'wb') as f_out:
