@@ -6,7 +6,7 @@ docutils==0.14
 hdfs==2.1.0
 idna==2.6
 lockfile==0.12.2
-luigi==2.7.2
+luigi==2.8.0
 prometheus-client==0.1.1
 python-daemon==2.1.2
 requests==2.18.4
